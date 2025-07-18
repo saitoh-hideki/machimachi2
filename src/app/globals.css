@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply overflow-x-hidden;
+  }
+}
+
+@layer components {
+  .shop-building {
+    @apply relative cursor-pointer transition-transform hover:scale-105 bg-white border border-gray-200 shadow-md text-gray-800;
+  }
+
+  .shop-sign {
+    @apply absolute -top-6 left-1/2 transform -translate-x-1/2 bg-white text-gray-800 px-3 py-1 rounded-md text-sm font-bold whitespace-nowrap border border-gray-200 shadow-sm;
+    font-family: 'Comic Sans MS', cursive;
+  }
+
+  .chat-bubble {
+    @apply absolute bg-white rounded-lg shadow-lg p-4 min-w-[300px] max-w-[400px] z-50;
+    &::before {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 20px;
+      width: 0;
+      height: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-top: 10px solid white;
+    }
+  }
+
+  .facility-icon {
+    @apply w-12 h-12 bg-white rounded-lg flex items-center justify-center cursor-pointer transition-all hover:scale-110 hover:shadow-lg;
+  }
+
+  .vision-display {
+    @apply bg-black text-white p-2 rounded-md;
+  }
+
+  .night-mode {
+    @apply bg-gradient-to-b from-black via-gray-900 to-gray-800;
+  }
+
+  .night-mode .shop-building {
+    filter: drop-shadow(0 0 10px rgba(255, 255, 200, 0.5));
+  }
+
+  .night-mode .car-headlight {
+    @apply opacity-100;
+  }
+
+  .day-mode {
+    @apply bg-sky-day;
+  }
+
+  .day-mode .car-headlight {
+    @apply opacity-0;
+  }
+}
