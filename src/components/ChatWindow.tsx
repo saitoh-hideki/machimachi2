@@ -6,6 +6,15 @@ import { ChatMessage } from '@/types'
 import { X, Send, Heart } from 'lucide-react'
 import { motion } from 'framer-motion'
 
+// Supabase Edge FunctionのエンドポイントURLを指定
+const SUPABASE_EDGE_URL = "https://mokjknnkqshriboykvtc.supabase.co/functions/v1/chat";
+
+// SupabaseのAnonキーとURL（今後の拡張用）
+const SUPABASE_URL = "https://mokjknnkqshriboykvtc.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1va2prbm5rcXNocmlib3lrdnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI4NDk5MDYsImV4cCI6MjA2ODQyNTkwNn0.oZjWC7JNUe2xPW0f8Xmq7kUKkx8o-1sS_kKsVVLrqCw";
+// import { createClient } from '@supabase/supabase-js';
+// const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 export const ChatWindow: React.FC = () => {
   const { selectedShop, selectedFacility, selectShop, selectFacility, toggleFavorite, favoriteShops } = useStore()
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -54,23 +63,34 @@ export const ChatWindow: React.FC = () => {
     setIsLoading(true)
 
     try {
-      const systemPrompt = selectedShop
-        ? `あなたは${selectedShop.name}の店主です。${selectedShop.stance} ${selectedShop.category}の専門知識を活かして、親しみやすく温かい対応をしてください。ユーザーの言語に応じて、同じ言語で返答してください。`
-        : `あなたは${selectedFacility!.name}の職員です。${selectedFacility!.philosophy} ${selectedFacility!.responseStance}の姿勢で対応してください。ユーザーの言語に応じて、同じ言語で返答してください。`
-
-      setTimeout(() => {
-        const mockResponse: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: `ありがとうございます。「${inputMessage}」について、お答えします。${entity?.name}では、皆様のお役に立てるよう心がけております。他にもご質問がございましたら、お気軽にお聞かせください。`,
-          timestamp: new Date(),
-        }
-        setMessages(prev => [...prev, mockResponse])
-        setIsLoading(false)
-      }, 1000)
+      // APIリクエスト用のshopTypeをcategoryから決定
+      const shopType = selectedShop ? selectedShop.category : undefined;
+      const conversationHistory = messages.map(m => ({ role: m.role, content: m.content }));
+      const res = await fetch(SUPABASE_EDGE_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({
+          message: inputMessage,
+          conversationHistory,
+          shopType
+        })
+      });
+      const data = await res.json();
+      const aiContent = data.response || '申し訳ございません。応答を生成できませんでした。';
+      const aiMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: aiContent,
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, aiMessage]);
+      setIsLoading(false);
     } catch (error) {
-      console.error('Error sending message:', error)
-      setIsLoading(false)
+      console.error('Error sending message:', error);
+      setIsLoading(false);
     }
   }
 
@@ -86,10 +106,41 @@ export const ChatWindow: React.FC = () => {
   const isFavorite = selectedShop && favoriteShops.includes(selectedShop.id)
 
   // チャットウィンドウの表示位置を決定
-  let justifyClass = 'justify-center'
+  let windowPositionStyle: React.CSSProperties = { left: '50%', transform: 'translateX(-50%)' };
   if (selectedShop) {
-    if (selectedShop.position.side === 'left') justifyClass = 'justify-start'
-    if (selectedShop.position.side === 'right') justifyClass = 'justify-end'
+    // ShoppingStreetのrows構造を再現してcolIdxを正確に特定
+    const { shops } = useStore.getState();
+    let displayShops = shops.length > 0 ? shops : [
+      {
+        id: '1', name: '田中パン屋', category: 'パン屋', stance: '', appearance: '', commercialText: '', position: { row: 0, side: 'left' }
+      },
+      {
+        id: '2', name: '花咲生花店', category: '花屋', stance: '', appearance: '', commercialText: '', position: { row: 0, side: 'right' }
+      },
+      {
+        id: '3', name: '山田書店', category: '本屋', stance: '', appearance: '', commercialText: '', position: { row: 1, side: 'left' }
+      },
+      {
+        id: '4', name: 'カフェ青山', category: 'カフェ', stance: '', appearance: '', commercialText: '', position: { row: 1, side: 'right' }
+      }
+    ];
+    let colIdx = -1;
+    for (let i = 0; i < Math.min(displayShops.length, 20); i += 4) {
+      const rowShops = displayShops.slice(i, i + 4);
+      const foundIdx = rowShops.findIndex(s => s.id === selectedShop.id);
+      if (foundIdx !== -1) {
+        colIdx = foundIdx;
+        break;
+      }
+    }
+    if (colIdx === 0 || colIdx === 1) {
+      windowPositionStyle = { left: 40, right: 'auto', transform: 'none' };
+    } else if (colIdx === 2 || colIdx === 3) {
+      windowPositionStyle = { right: 40, left: 'auto', transform: 'none' };
+    }
+  } else {
+    // 公共施設や未選択時は中央
+    windowPositionStyle = { left: '50%', transform: 'translateX(-50%)' };
   }
 
   return (
@@ -97,7 +148,8 @@ export const ChatWindow: React.FC = () => {
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.8 }}
-      className={`fixed inset-0 bg-black/50 flex items-center ${justifyClass} z-50 p-4`}
+      className={"fixed inset-y-0 z-50 p-4 flex items-center"}
+      style={windowPositionStyle}
     >
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md h-[500px] flex flex-col">
         <div className="flex items-center justify-between p-4 border-b">
