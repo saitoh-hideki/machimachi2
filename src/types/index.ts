@@ -17,6 +17,7 @@ export interface Shop {
     row: number
     side: 'left' | 'right'
   }
+  visionEnabled?: boolean
 }
 
 export interface Facility {

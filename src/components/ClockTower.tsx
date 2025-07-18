@@ -5,7 +5,7 @@ import { useStore } from '@/store/useStore'
 import { motion } from 'framer-motion'
 
 export const ClockTower: React.FC = () => {
-  const { timeMode } = useStore()
+  const { timeMode, shops } = useStore()
   const [currentTime, setCurrentTime] = useState(new Date())
 
   useEffect(() => {
@@ -16,22 +16,29 @@ export const ClockTower: React.FC = () => {
     return () => clearInterval(timer)
   }, [])
 
-  const commercialMessages = [
-    { text: "今週末は大感謝セール開催中！", shop: "田中パン屋" },
-    { text: "母の日フェア実施中", shop: "花咲生花店" },
-    { text: "新刊入荷しました", shop: "山田書店" },
-    { text: "季節限定ドリンク登場", shop: "カフェ青山" },
-  ]
+  // ビジョンに流す店舗のお知らせを動的に生成
+  const commercialMessages = shops
+    .filter(shop => shop.visionEnabled && shop.commercialText)
+    .map(shop => ({ text: shop.commercialText, shop: shop.name }))
+    // デフォルトがなければモック
+    .concat(shops.length === 0 ? [
+      { text: "今週末は大感謝セール開催中！", shop: "田中パン屋" },
+      { text: "母の日フェア実施中", shop: "花咲生花店" },
+      { text: "新刊入荷しました", shop: "山田書店" },
+      { text: "季節限定ドリンク登場", shop: "カフェ青山" },
+    ] : []);
 
   const [currentAdIndex, setCurrentAdIndex] = useState(0)
 
   useEffect(() => {
     const adTimer = setInterval(() => {
-      setCurrentAdIndex((prev) => (prev + 1) % commercialMessages.length)
-    }, 5000)
-
-    return () => clearInterval(adTimer)
-  }, [])
+      setCurrentAdIndex((prev) => {
+        if (commercialMessages.length === 0) return 0;
+        return (prev + 1) % commercialMessages.length;
+      });
+    }, 5000);
+    return () => clearInterval(adTimer);
+  }, [commercialMessages.length]);
 
   const hourAngle = (currentTime.getHours() % 12) * 30 + currentTime.getMinutes() * 0.5
   const minuteAngle = currentTime.getMinutes() * 6
@@ -80,8 +87,14 @@ export const ClockTower: React.FC = () => {
         className="mt-2 bg-gradient-to-b from-white via-gray-50 to-gray-200 text-gray-800 shadow p-2 rounded-lg text-xs max-w-xs"
       >
         <div className="text-center">
-          <div className="font-bold">{commercialMessages[currentAdIndex].shop}</div>
-          <div>{commercialMessages[currentAdIndex].text}</div>
+          {commercialMessages.length > 0 ? (
+            <>
+              <div className="font-bold">{commercialMessages[currentAdIndex].shop}</div>
+              <div>{commercialMessages[currentAdIndex].text}</div>
+            </>
+          ) : (
+            <div className="text-gray-400">現在お知らせはありません</div>
+          )}
         </div>
       </motion.div>
     </div>

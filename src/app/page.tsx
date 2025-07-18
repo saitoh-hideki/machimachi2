@@ -9,6 +9,7 @@ import { ChatWindow } from '@/components/ChatWindow'
 import { NightModeToggle } from '@/components/NightModeToggle'
 import SettingsButton from '@/components/SettingsButton'
 import { TopLeftIcons } from '@/components/TopLeftIcons'
+import { Shop } from '@/types'
 
 export default function Home() {
   const { timeMode, setTimeMode } = useStore()
@@ -53,6 +54,8 @@ export default function Home() {
     commercialText: '',
     stance: '',
     appearance: '🏪',
+    homepageUrl: '',
+    visionEnabled: false,
   })
   const { favoriteShops } = useStore()
   const [showMyStreet, setShowMyStreet] = React.useState(false)
@@ -184,6 +187,8 @@ export default function Home() {
                           }))}
                           placeholder="お知らせ内容"
                         />
+                        <input type="file" className="border rounded px-2 py-1 w-full mt-1" />
+                        <div className="text-xs text-gray-500 mt-1">アップロードしたファイルは施設のお知らせラグとして利用できます（今はUIのみ）</div>
                       </div>
                     </div>
                   ))}
@@ -230,6 +235,27 @@ export default function Home() {
                           value={newShop.category}
                           onChange={e => setNewShop(s => ({ ...s, category: e.target.value }))}
                         />
+                        <input
+                          type="text"
+                          className="border rounded px-2 py-1 w-full"
+                          placeholder="住所"
+                          value={newShop.address}
+                          onChange={e => setNewShop(s => ({ ...s, address: e.target.value }))}
+                        />
+                        <input
+                          type="text"
+                          className="border rounded px-2 py-1 w-full"
+                          placeholder="電話番号"
+                          value={newShop.phone}
+                          onChange={e => setNewShop(s => ({ ...s, phone: e.target.value }))}
+                        />
+                        <input
+                          type="text"
+                          className="border rounded px-2 py-1 w-full"
+                          placeholder="URL"
+                          value={newShop.homepageUrl}
+                          onChange={e => setNewShop(s => ({ ...s, homepageUrl: e.target.value }))}
+                        />
                         <div className="flex space-x-2">
                           <select
                             className="border rounded px-2 py-1 w-1/2"
@@ -252,84 +278,89 @@ export default function Home() {
                             ))}
                           </select>
                         </div>
-                        <input
-                          type="text"
-                          className="border rounded px-2 py-1 w-full"
-                          placeholder="求人情報（例：アルバイト募集中など）"
-                          value={newShop.recruit || ''}
-                          onChange={e => setNewShop(s => ({ ...s, recruit: e.target.value }))}
-                        />
-                        <input
-                          type="text"
-                          className="border rounded px-2 py-1 w-full"
-                          placeholder="右側のお知らせ（例：セール情報など）"
-                          value={newShop.commercialText}
-                          onChange={e => setNewShop(s => ({ ...s, commercialText: e.target.value }))}
-                        />
-                        <textarea
-                          className="border rounded px-2 py-1 w-full"
-                          rows={2}
-                          placeholder="チャットの特徴（例：親しみやすい、専門的など）"
-                          value={newShop.stance}
-                          onChange={e => setNewShop(s => ({ ...s, stance: e.target.value }))}
-                        />
-                        <input
-                          type="text"
-                          className="border rounded px-2 py-1 w-full"
-                          placeholder="電話番号"
-                          value={newShop.phone || ''}
-                          onChange={e => setNewShop(s => ({ ...s, phone: e.target.value }))}
-                        />
-                        <input
-                          type="text"
-                          className="border rounded px-2 py-1 w-full"
-                          placeholder="住所"
-                          value={newShop.address || ''}
-                          onChange={e => setNewShop(s => ({ ...s, address: e.target.value }))}
-                        />
-                        <input
-                          type="text"
-                          className="border rounded px-2 py-1 w-full"
-                          placeholder="キャッチフレーズ"
-                          value={newShop.catchphrase || ''}
-                          onChange={e => setNewShop(s => ({ ...s, catchphrase: e.target.value }))}
-                        />
-                        <button
-                          className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                          onClick={() => {
-                            const id = Date.now().toString()
-                            const position = getNextShopPosition(shops)
-                            const newShopObj = {
-                              id,
-                              name: newShop.name || '新店舗',
-                              category: newShop.category,
-                              stance: newShop.stance,
-                              appearance: newShop.appearance,
-                              commercialText: newShop.commercialText,
-                              hoursStart: newShop.hoursStart,
-                              hoursEnd: newShop.hoursEnd,
-                              recruit: newShop.recruit,
-                              phone: newShop.phone,
-                              address: newShop.address,
-                              catchphrase: newShop.catchphrase,
-                              position,
-                            }
-                            setShops([...shops, newShopObj])
-                            setShopDetails(details => ({
-                              ...details,
-                              [id]: {
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="recruit"
+                            checked={!!newShop.recruit}
+                            onChange={e => setNewShop(s => ({ ...s, recruit: e.target.checked ? 'あり' : '' }))}
+                          />
+                          <label htmlFor="recruit">求人募集あり</label>
+                        </div>
+                        <div>
+                          <label className="block font-semibold mb-1">お知らせ</label>
+                          <input
+                            type="text"
+                            className="border rounded px-2 py-1 w-full"
+                            placeholder="お知らせ（例：セール情報など）"
+                            value={newShop.commercialText}
+                            onChange={e => setNewShop(s => ({ ...s, commercialText: e.target.value }))}
+                          />
+                          <div className="flex items-center space-x-2 mt-1">
+                            <input
+                              type="checkbox"
+                              id="visionEnabled"
+                              checked={!!newShop.visionEnabled}
+                              onChange={e => setNewShop(s => ({ ...s, visionEnabled: e.target.checked }))}
+                            />
+                            <label htmlFor="visionEnabled">ビジョンに流す</label>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block font-semibold mb-1">AIチャット設定</label>
+                          <textarea
+                            className="border rounded px-2 py-1 w-full"
+                            rows={3}
+                            value={newShop.stance}
+                            onChange={e => setNewShop(s => ({ ...s, stance: e.target.value }))}
+                            placeholder="AIチャットのキャラクターや説明文など"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-semibold mb-1">データアップロード（ラグ）</label>
+                          <input type="file" className="border rounded px-2 py-1 w-full" />
+                          <div className="text-xs text-gray-500 mt-1">アップロードしたファイルはAIチャットのラグとして利用できます（今はUIのみ）</div>
+                        </div>
+                        <div>
+                          <button
+                            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full"
+                            onClick={() => {
+                              const id = Date.now().toString();
+                              const position = getNextShopPosition(shops);
+                              const newShopObj = {
+                                id,
                                 name: newShop.name || '新店舗',
                                 category: newShop.category,
-                                hours: newShop.hours,
-                                commercialText: newShop.commercialText,
                                 stance: newShop.stance,
-                              }
-                            }))
-                            setNewShop({ name: '', category: '', hours: '', hoursStart: '', hoursEnd: '', recruit: '', phone: '', address: '', catchphrase: '', commercialText: '', stance: '', appearance: '🏪' })
-                            setAddingShop(false)
-                            setSelectedShopId(id)
-                          }}
-                        >追加</button>
+                                appearance: newShop.appearance,
+                                commercialText: newShop.commercialText,
+                                hoursStart: newShop.hoursStart,
+                                hoursEnd: newShop.hoursEnd,
+                                recruit: newShop.recruit,
+                                phone: newShop.phone,
+                                address: newShop.address,
+                                catchphrase: newShop.catchphrase,
+                                homepageUrl: newShop.homepageUrl,
+                                visionEnabled: newShop.visionEnabled,
+                                position,
+                              };
+                              setShops([...shops, newShopObj]);
+                              setShopDetails(details => ({
+                                ...details,
+                                [id]: {
+                                  name: newShop.name || '新店舗',
+                                  category: newShop.category,
+                                  hours: newShop.hours,
+                                  commercialText: newShop.commercialText,
+                                  stance: newShop.stance,
+                                }
+                              }));
+                              setNewShop({ name: '', category: '', hours: '', hoursStart: '', hoursEnd: '', recruit: '', phone: '', address: '', catchphrase: '', commercialText: '', stance: '', appearance: '🏪', homepageUrl: '', visionEnabled: false });
+                              setAddingShop(false);
+                              setSelectedShopId(id);
+                            }}
+                          >保存</button>
+                        </div>
                       </div>
                     </div>
                   ) : selectedShopId ? (
@@ -365,42 +396,130 @@ export default function Home() {
                         <input
                           type="text"
                           className="border rounded px-2 py-1 w-full"
-                          value={shopDetails[selectedShopId]?.hours || ''}
-                          onChange={e => setShopDetails(details => ({
-                            ...details,
-                            [selectedShopId]: {
-                              ...details[selectedShopId],
-                              hours: e.target.value
-                            }
-                          }))}
-                          placeholder="営業時間"
+                          value={shops.find(s => s.id === selectedShopId)?.address || ''}
+                          onChange={e => {
+                            const newShops = shops.map(s => s.id === selectedShopId ? { ...s, address: e.target.value } : s);
+                            setShops(newShops);
+                          }}
+                          placeholder="住所"
                         />
                         <input
                           type="text"
                           className="border rounded px-2 py-1 w-full"
-                          value={shopDetails[selectedShopId]?.commercialText || ''}
-                          onChange={e => setShopDetails(details => ({
-                            ...details,
-                            [selectedShopId]: {
-                              ...details[selectedShopId],
-                              commercialText: e.target.value
-                            }
-                          }))}
-                          placeholder="右側のお知らせ（例：セール情報など）"
+                          value={shops.find(s => s.id === selectedShopId)?.phone || ''}
+                          onChange={e => {
+                            const newShops = shops.map(s => s.id === selectedShopId ? { ...s, phone: e.target.value } : s);
+                            setShops(newShops);
+                          }}
+                          placeholder="電話番号"
                         />
-                        <textarea
+                        <input
+                          type="text"
                           className="border rounded px-2 py-1 w-full"
-                          rows={2}
-                          value={shopDetails[selectedShopId]?.stance || ''}
-                          onChange={e => setShopDetails(details => ({
-                            ...details,
-                            [selectedShopId]: {
-                              ...details[selectedShopId],
-                              stance: e.target.value
-                            }
-                          }))}
-                          placeholder="チャットの特徴（例：親しみやすい、専門的など）"
+                          value={shops.find(s => s.id === selectedShopId)?.homepageUrl || ''}
+                          onChange={e => {
+                            const newShops = shops.map(s => s.id === selectedShopId ? { ...s, homepageUrl: e.target.value } : s);
+                            setShops(newShops);
+                          }}
+                          placeholder="URL"
                         />
+                        <div className="flex space-x-2">
+                          <select
+                            className="border rounded px-2 py-1 w-1/2"
+                            value={shops.find(s => s.id === selectedShopId)?.hoursStart || ''}
+                            onChange={e => {
+                              const newShops = shops.map(s => s.id === selectedShopId ? { ...s, hoursStart: e.target.value } : s);
+                              setShops(newShops);
+                            }}
+                          >
+                            <option value="">開始時刻</option>
+                            {Array.from({length: 24}, (_, i) => `${i}:00`).map(time => (
+                              <option key={time} value={time}>{time}</option>
+                            ))}
+                          </select>
+                          <select
+                            className="border rounded px-2 py-1 w-1/2"
+                            value={shops.find(s => s.id === selectedShopId)?.hoursEnd || ''}
+                            onChange={e => {
+                              const newShops = shops.map(s => s.id === selectedShopId ? { ...s, hoursEnd: e.target.value } : s);
+                              setShops(newShops);
+                            }}
+                          >
+                            <option value="">終了時刻</option>
+                            {Array.from({length: 24}, (_, i) => `${i}:00`).map(time => (
+                              <option key={time} value={time}>{time}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="recruit-edit"
+                            checked={!!shops.find(s => s.id === selectedShopId)?.recruit}
+                            onChange={e => {
+                              const newShops = shops.map(s => s.id === selectedShopId ? { ...s, recruit: e.target.checked ? 'あり' : '' } : s);
+                              setShops(newShops);
+                            }}
+                          />
+                          <label htmlFor="recruit-edit">求人募集あり</label>
+                        </div>
+                        <div>
+                          <label className="block font-semibold mb-1">お知らせ</label>
+                          <input
+                            type="text"
+                            className="border rounded px-2 py-1 w-full"
+                            value={shops.find(s => s.id === selectedShopId)?.commercialText || ''}
+                            onChange={e => {
+                              const newShops = shops.map(s => s.id === selectedShopId ? { ...s, commercialText: e.target.value } : s);
+                              setShops(newShops);
+                            }}
+                            placeholder="お知らせ（例：セール情報など）"
+                          />
+                          <div className="flex items-center space-x-2 mt-1">
+                            <input
+                              type="checkbox"
+                              id="visionEnabled-edit"
+                              checked={!!shops.find(s => s.id === selectedShopId)?.visionEnabled}
+                              onChange={e => {
+                                const newShops = shops.map(s => s.id === selectedShopId ? { ...s, visionEnabled: e.target.checked } : s);
+                                setShops(newShops);
+                              }}
+                            />
+                            <label htmlFor="visionEnabled-edit">ビジョンに流す</label>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block font-semibold mb-1">AIチャット設定</label>
+                          <textarea
+                            className="border rounded px-2 py-1 w-full"
+                            rows={3}
+                            value={shops.find(s => s.id === selectedShopId)?.stance || ''}
+                            onChange={e => {
+                              const newShops = shops.map(s => s.id === selectedShopId ? { ...s, stance: e.target.value } : s);
+                              setShops(newShops);
+                            }}
+                            placeholder="AIチャットのキャラクターや説明文など"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-semibold mb-1">データアップロード（ラグ）</label>
+                          <input type="file" className="border rounded px-2 py-1 w-full" />
+                          <div className="text-xs text-gray-500 mt-1">アップロードしたファイルはAIチャットのラグとして利用できます（今はUIのみ）</div>
+                        </div>
+                        <div>
+                          <button
+                            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full"
+                            onClick={() => {
+                              setShopDetails(details => ({
+                                ...details,
+                                [selectedShopId]: {
+                                  ...details[selectedShopId],
+                                }
+                              }));
+                              setSelectedShopId(null);
+                            }}
+                          >保存</button>
+                        </div>
                       </div>
                     </div>
                   ) : (

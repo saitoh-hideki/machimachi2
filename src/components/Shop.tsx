@@ -35,6 +35,8 @@ export const Shop: React.FC<ShopProps> = ({ shop }) => {
         <div className="bg-white rounded-full shadow-sm p-2 flex items-center justify-center">
           <span className="text-5xl sm:text-3xl">{shop.appearance}</span>
         </div>
+        {/* 下段に業種を表示 */}
+        <div className="text-xs text-center mt-1 text-gray-600">{shop.category}</div>
         {/* 右上に詳細・リンクアイコン */}
         <div className="absolute top-2 right-2 flex space-x-1 z-10 sm:top-1 sm:right-1">
           <button
@@ -46,7 +48,7 @@ export const Shop: React.FC<ShopProps> = ({ shop }) => {
           </button>
           <button
             onClick={e => { e.stopPropagation(); if (shop.homepageUrl) window.open(shop.homepageUrl, '_blank') }}
-            className="p-1 rounded-full bg-white/80 hover:bg-white transition-colors"
+            className={`p-1 rounded-full bg-white/80 hover:bg-white transition-colors ${shop.homepageUrl ? 'text-blue-600' : 'text-gray-400'}`}
             title="ホームページ"
             disabled={!shop.homepageUrl}
           >
@@ -74,13 +76,14 @@ export const Shop: React.FC<ShopProps> = ({ shop }) => {
             <div className="space-y-2">
               <div><span className="font-semibold">店舗名：</span>{shop.name}</div>
               <div><span className="font-semibold">業種：</span>{shop.category}</div>
-              <div><span className="font-semibold">スタンス：</span>{shop.stance}</div>
-              <div><span className="font-semibold">営業時間：</span>{shop.hoursStart || ''}〜{shop.hoursEnd || ''}</div>
+              <div><span className="font-semibold">住所：</span>{shop.address}</div>
+              <div><span className="font-semibold">電話番号：</span>{shop.phone}</div>
+              <div><span className="font-semibold">URL：</span>{shop.homepageUrl ? (<a href={shop.homepageUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">{shop.homepageUrl}</a>) : '未登録'}</div>
+              <div><span className="font-semibold">開始時間：</span>{shop.hoursStart || ''}</div>
+              <div><span className="font-semibold">終了時間：</span>{shop.hoursEnd || ''}</div>
+              <div><span className="font-semibold">求人募集：</span>{shop.recruit ? 'あり' : 'なし'}</div>
               <div><span className="font-semibold">お知らせ：</span>{shop.commercialText}</div>
-              <div><span className="font-semibold">求人情報：</span>{shop.recruit}</div>
-              {shop.homepageUrl && (
-                <div><a href={shop.homepageUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">ホームページを見る</a></div>
-              )}
+              {/* ここまでが基本情報。AIチャット設定やラグはこの下に追加可能 */}
             </div>
           </div>
         </div>
