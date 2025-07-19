@@ -9,7 +9,10 @@ import { ChatWindow } from '@/components/ChatWindow'
 import { NightModeToggle } from '@/components/NightModeToggle'
 import SettingsButton from '@/components/SettingsButton'
 import { TopLeftIcons } from '@/components/TopLeftIcons'
-import { Shop } from '@/types'
+import { Shop } from '../types'
+import { supabase } from '@/lib/supabaseClient';
+import ShopEditForm from '../components/ShopEditForm';
+import { v4 as uuidv4 } from 'uuid';
 
 export default function Home() {
   const { timeMode, setTimeMode } = useStore()
@@ -60,6 +63,10 @@ export default function Home() {
   const { favoriteShops } = useStore()
   const [showMyStreet, setShowMyStreet] = React.useState(false)
   const shopListRef = useRef<HTMLDivElement>(null)
+  const [uploading, setUploading] = React.useState(false);
+  const [uploadMessage, setUploadMessage] = React.useState<string | null>(null);
+  const [shopLags, setShopLags] = React.useState<Record<string, Array<{ id: string, file_url: string, file_name: string }>>>({});
+  const [pendingLags, setPendingLags] = React.useState<Array<{ file_url: string, file_name: string }>>([]);
 
   // 追加時の自動配置ロジック
   function getNextShopPosition(currentShops: import('@/types').Shop[]): { row: number; side: 'left' | 'right' } {
@@ -68,6 +75,16 @@ export default function Home() {
     const row = Math.floor(count / 2) % 4
     return { row, side }
   }
+
+  // 店舗選択時にラグ一覧を取得
+  useEffect(() => {
+    const fetchLags = async () => {
+      if (!selectedShopId) return;
+      const { data } = await supabase.from('shop_lags').select('id, file_url, file_name').eq('shop_id', selectedShopId);
+      setShopLags(lags => ({ ...lags, [selectedShopId]: data || [] }));
+    };
+    fetchLags();
+  }, [selectedShopId]);
 
   useEffect(() => {
     const hour = new Date().getHours()
@@ -80,6 +97,46 @@ export default function Home() {
       shopListRef.current.scrollTop = shopListRef.current.scrollHeight
     }
   }, [shops.length])
+
+  // onUploadの定義
+  const handleUpload = async (file: File) => {
+    if (!selectedShopId) {
+      setUploadMessage('店舗IDが不正です。');
+      return;
+    }
+    setUploading(true);
+    setUploadMessage(null);
+    const uniqueName = `${Date.now()}_${file.name}`;
+    const filePath = `${selectedShopId}/${uniqueName}`;
+    const { data, error } = await supabase.storage
+      .from('shop-lags')
+      .upload(filePath, file);
+    if (error) {
+      setUploadMessage('アップロード失敗: ' + error.message);
+      setUploading(false);
+      return;
+    }
+    const { data: publicUrlData } = supabase.storage
+      .from('shop-lags')
+      .getPublicUrl(filePath);
+    // DB登録
+    const { error: insertError } = await supabase.from('shop_lags').insert({
+      shop_id: selectedShopId,
+      file_url: publicUrlData.publicUrl,
+      file_name: uniqueName,
+      description: '',
+    });
+    if (insertError) {
+      setUploadMessage('DB登録失敗: ' + insertError.message);
+      setUploading(false);
+      return;
+    }
+    // 再取得
+    const { data: lags } = await supabase.from('shop_lags').select('id, file_url, file_name').eq('shop_id', selectedShopId);
+    setShopLags(l => ({ ...l, [selectedShopId]: lags || [] }));
+    setUploadMessage('アップロード完了: ' + file.name);
+    setUploading(false);
+  };
 
   return (
     <div className={`min-h-screen transition-colors duration-1000 ${
@@ -218,6 +275,7 @@ export default function Home() {
                 </div>
                 <div className="flex-1">
                   {addingShop ? (
+                    // 新規追加フォーム
                     <div>
                       <div className="font-semibold mb-2">新規店舗・事務所の追加</div>
                       <div className="space-y-2">
@@ -317,33 +375,33 @@ export default function Home() {
                           />
                         </div>
                         <div>
-                          <label className="block font-semibold mb-1">データアップロード（ラグ）</label>
-                          <input type="file" className="border rounded px-2 py-1 w-full" />
-                          <div className="text-xs text-gray-500 mt-1">アップロードしたファイルはAIチャットのラグとして利用できます（今はUIのみ）</div>
-                        </div>
-                        <div>
                           <button
                             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full"
-                            onClick={() => {
-                              const id = Date.now().toString();
+                            onClick={async () => {
+                              const id = uuidv4(); // ← uuidでID生成
                               const position = getNextShopPosition(shops);
                               const newShopObj = {
                                 id,
                                 name: newShop.name || '新店舗',
-                                category: newShop.category,
-                                stance: newShop.stance,
-                                appearance: newShop.appearance,
-                                commercialText: newShop.commercialText,
-                                hoursStart: newShop.hoursStart,
-                                hoursEnd: newShop.hoursEnd,
-                                recruit: newShop.recruit,
-                                phone: newShop.phone,
-                                address: newShop.address,
-                                catchphrase: newShop.catchphrase,
-                                homepageUrl: newShop.homepageUrl,
-                                visionEnabled: newShop.visionEnabled,
+                                category: newShop.category || '',
+                                stance: newShop.stance || '',
+                                appearance: newShop.appearance || '',
+                                commercial_text: newShop.commercialText || '',
+                                hours_start: newShop.hoursStart || '',
+                                hours_end: newShop.hoursEnd || '',
+                                recruit: newShop.recruit || '',
+                                phone: newShop.phone || '',
+                                address: newShop.address || '',
+                                homepage_url: newShop.homepageUrl || '',
+                                vision_enabled: newShop.visionEnabled ?? false,
                                 position,
                               };
+                              // shopsテーブルにinsert
+                              const { error: shopInsertError } = await supabase.from('shops').insert(newShopObj);
+                              if (shopInsertError) {
+                                alert('店舗登録失敗: ' + shopInsertError.message);
+                                return;
+                              }
                               setShops([...shops, newShopObj]);
                               setShopDetails(details => ({
                                 ...details,
@@ -364,164 +422,25 @@ export default function Home() {
                       </div>
                     </div>
                   ) : selectedShopId ? (
-                    <div>
-                      <div className="font-semibold mb-2">店舗・事務所の詳細設定</div>
-                      <div className="space-y-2">
-                        <input
-                          type="text"
-                          className="border rounded px-2 py-1 w-full"
-                          value={shopDetails[selectedShopId]?.name || ''}
-                          onChange={e => setShopDetails(details => ({
-                            ...details,
-                            [selectedShopId]: {
-                              ...details[selectedShopId],
-                              name: e.target.value
-                            }
-                          }))}
-                          placeholder="店舗名"
-                        />
-                        <input
-                          type="text"
-                          className="border rounded px-2 py-1 w-full"
-                          value={shopDetails[selectedShopId]?.category || ''}
-                          onChange={e => setShopDetails(details => ({
-                            ...details,
-                            [selectedShopId]: {
-                              ...details[selectedShopId],
-                              category: e.target.value
-                            }
-                          }))}
-                          placeholder="業種"
-                        />
-                        <input
-                          type="text"
-                          className="border rounded px-2 py-1 w-full"
-                          value={shops.find(s => s.id === selectedShopId)?.address || ''}
-                          onChange={e => {
-                            const newShops = shops.map(s => s.id === selectedShopId ? { ...s, address: e.target.value } : s);
-                            setShops(newShops);
-                          }}
-                          placeholder="住所"
-                        />
-                        <input
-                          type="text"
-                          className="border rounded px-2 py-1 w-full"
-                          value={shops.find(s => s.id === selectedShopId)?.phone || ''}
-                          onChange={e => {
-                            const newShops = shops.map(s => s.id === selectedShopId ? { ...s, phone: e.target.value } : s);
-                            setShops(newShops);
-                          }}
-                          placeholder="電話番号"
-                        />
-                        <input
-                          type="text"
-                          className="border rounded px-2 py-1 w-full"
-                          value={shops.find(s => s.id === selectedShopId)?.homepageUrl || ''}
-                          onChange={e => {
-                            const newShops = shops.map(s => s.id === selectedShopId ? { ...s, homepageUrl: e.target.value } : s);
-                            setShops(newShops);
-                          }}
-                          placeholder="URL"
-                        />
-                        <div className="flex space-x-2">
-                          <select
-                            className="border rounded px-2 py-1 w-1/2"
-                            value={shops.find(s => s.id === selectedShopId)?.hoursStart || ''}
-                            onChange={e => {
-                              const newShops = shops.map(s => s.id === selectedShopId ? { ...s, hoursStart: e.target.value } : s);
-                              setShops(newShops);
-                            }}
-                          >
-                            <option value="">開始時刻</option>
-                            {Array.from({length: 24}, (_, i) => `${i}:00`).map(time => (
-                              <option key={time} value={time}>{time}</option>
-                            ))}
-                          </select>
-                          <select
-                            className="border rounded px-2 py-1 w-1/2"
-                            value={shops.find(s => s.id === selectedShopId)?.hoursEnd || ''}
-                            onChange={e => {
-                              const newShops = shops.map(s => s.id === selectedShopId ? { ...s, hoursEnd: e.target.value } : s);
-                              setShops(newShops);
-                            }}
-                          >
-                            <option value="">終了時刻</option>
-                            {Array.from({length: 24}, (_, i) => `${i}:00`).map(time => (
-                              <option key={time} value={time}>{time}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            id="recruit-edit"
-                            checked={!!shops.find(s => s.id === selectedShopId)?.recruit}
-                            onChange={e => {
-                              const newShops = shops.map(s => s.id === selectedShopId ? { ...s, recruit: e.target.checked ? 'あり' : '' } : s);
-                              setShops(newShops);
-                            }}
-                          />
-                          <label htmlFor="recruit-edit">求人募集あり</label>
-                        </div>
-                        <div>
-                          <label className="block font-semibold mb-1">お知らせ</label>
-                          <input
-                            type="text"
-                            className="border rounded px-2 py-1 w-full"
-                            value={shops.find(s => s.id === selectedShopId)?.commercialText || ''}
-                            onChange={e => {
-                              const newShops = shops.map(s => s.id === selectedShopId ? { ...s, commercialText: e.target.value } : s);
-                              setShops(newShops);
-                            }}
-                            placeholder="お知らせ（例：セール情報など）"
-                          />
-                          <div className="flex items-center space-x-2 mt-1">
-                            <input
-                              type="checkbox"
-                              id="visionEnabled-edit"
-                              checked={!!shops.find(s => s.id === selectedShopId)?.visionEnabled}
-                              onChange={e => {
-                                const newShops = shops.map(s => s.id === selectedShopId ? { ...s, visionEnabled: e.target.checked } : s);
-                                setShops(newShops);
-                              }}
-                            />
-                            <label htmlFor="visionEnabled-edit">ビジョンに流す</label>
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block font-semibold mb-1">AIチャット設定</label>
-                          <textarea
-                            className="border rounded px-2 py-1 w-full"
-                            rows={3}
-                            value={shops.find(s => s.id === selectedShopId)?.stance || ''}
-                            onChange={e => {
-                              const newShops = shops.map(s => s.id === selectedShopId ? { ...s, stance: e.target.value } : s);
-                              setShops(newShops);
-                            }}
-                            placeholder="AIチャットのキャラクターや説明文など"
-                          />
-                        </div>
-                        <div>
-                          <label className="block font-semibold mb-1">データアップロード（ラグ）</label>
-                          <input type="file" className="border rounded px-2 py-1 w-full" />
-                          <div className="text-xs text-gray-500 mt-1">アップロードしたファイルはAIチャットのラグとして利用できます（今はUIのみ）</div>
-                        </div>
-                        <div>
-                          <button
-                            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full"
-                            onClick={() => {
-                              setShopDetails(details => ({
-                                ...details,
-                                [selectedShopId]: {
-                                  ...details[selectedShopId],
-                                }
-                              }));
-                              setSelectedShopId(null);
-                            }}
-                          >保存</button>
-                        </div>
-                      </div>
-                    </div>
+                    // 既存店舗編集フォーム
+                    <ShopEditForm
+                      shop={shops.find(s => s.id === selectedShopId)!}
+                      lags={shopLags[selectedShopId] || []}
+                      uploading={uploading}
+                      uploadMessage={uploadMessage}
+                      onUpload={handleUpload}
+                      onDeleteLag={async (lagId) => {
+                        await supabase.from('shop_lags').delete().eq('id', lagId);
+                        const { data: lags } = await supabase.from('shop_lags').select('id, file_url, file_name').eq('shop_id', selectedShopId);
+                        setShopLags(l => ({ ...l, [selectedShopId]: lags || [] }));
+                      }}
+                      onSave={updatedShop => {
+                        setShops(shops.map(s => s.id === selectedShopId ? { ...s, ...updatedShop } : s));
+                        setSelectedShopId(null);
+                        setAddingShop(false);
+                      }}
+                      onCancel={() => setSelectedShopId(null)}
+                    />
                   ) : (
                     <div className="text-gray-400">店舗・事務所を選択してください</div>
                   )}

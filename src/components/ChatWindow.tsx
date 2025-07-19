@@ -65,6 +65,7 @@ export const ChatWindow: React.FC = () => {
     try {
       // APIリクエスト用のshopTypeをcategoryから決定
       const shopType = selectedShop ? selectedShop.category : undefined;
+      const shopId = selectedShop ? selectedShop.id : undefined;
       const conversationHistory = messages.map(m => ({ role: m.role, content: m.content }));
       const res = await fetch(SUPABASE_EDGE_URL, {
         method: 'POST',
@@ -75,7 +76,8 @@ export const ChatWindow: React.FC = () => {
         body: JSON.stringify({
           message: inputMessage,
           conversationHistory,
-          shopType
+          shopType,
+          shopId // ← 追加
         })
       });
       const data = await res.json();

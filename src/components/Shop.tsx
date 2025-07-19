@@ -1,9 +1,10 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Shop as ShopType } from '@/types'
 import { useStore } from '@/store/useStore'
 import { Heart, Info, Globe } from 'lucide-react'
+import { supabase } from '@/lib/supabaseClient';
 
 interface ShopProps {
   shop: ShopType
@@ -22,6 +23,16 @@ export const Shop: React.FC<ShopProps> = ({ shop }) => {
     e.stopPropagation()
     toggleFavorite(shop.id)
   }
+
+  const [lags, setLags] = useState<Array<{ id: string, file_url: string, file_name: string }>>([]);
+  useEffect(() => {
+    if (!showInfo) return;
+    const fetchLags = async () => {
+      const { data } = await supabase.from('shop_lags').select('id, file_url, file_name').eq('shop_id', shop.id);
+      setLags(data || []);
+    };
+    fetchLags();
+  }, [showInfo, shop.id]);
 
   return (
     <div className="relative w-[3cm] max-w-md">
@@ -84,6 +95,30 @@ export const Shop: React.FC<ShopProps> = ({ shop }) => {
               <div><span className="font-semibold">求人募集：</span>{shop.recruit ? 'あり' : 'なし'}</div>
               <div><span className="font-semibold">お知らせ：</span>{shop.commercialText}</div>
               {/* ここまでが基本情報。AIチャット設定やラグはこの下に追加可能 */}
+              {lags.length > 0 && (
+                <div className="mt-4">
+                  <div className="font-semibold text-xs mb-1">アップロード済みラグ一覧</div>
+                  <ul className="space-y-1">
+                    {lags.map(lag => (
+                      <li key={lag.id} className="flex items-center space-x-2">
+                        <a href={lag.file_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">{lag.file_name}</a>
+                        <button
+                          className="text-xs text-red-600 hover:underline"
+                          onClick={async () => {
+                            const filePath = lag.file_url.split('/shop-lags/')[1];
+                            if (filePath) {
+                              await supabase.storage.from('shop-lags').remove([filePath]);
+                            }
+                            await supabase.from('shop_lags').delete().eq('id', lag.id);
+                            const { data } = await supabase.from('shop_lags').select('id, file_url, file_name').eq('shop_id', shop.id);
+                            setLags(data || []);
+                          }}
+                        >削除</button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
         </div>

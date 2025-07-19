@@ -1,24 +1,19 @@
-export interface Shop {
-  id: string
-  name: string
-  category: string
-  stance: string
-  appearance: string
-  commercialText: string
-  commercialImage?: string
-  homepageUrl?: string
-  hoursStart?: string
-  hoursEnd?: string
-  recruit?: string
-  phone?: string
-  address?: string
-  catchphrase?: string
-  position: {
-    row: number
-    side: 'left' | 'right'
-  }
-  visionEnabled?: boolean
-}
+export type Shop = {
+  id: string;
+  name: string;
+  category: string;
+  stance: string;
+  appearance: string;
+  commercial_text: string;
+  hours_start: string;
+  hours_end: string;
+  recruit: string;
+  phone: string;
+  address: string;
+  homepage_url: string;
+  vision_enabled: boolean;
+  position: any; // jsonb
+};
 
 export interface Facility {
   id: string
