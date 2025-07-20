@@ -88,10 +88,10 @@ const ShopEditForm: React.FC<ShopEditFormProps> = ({ shop, lags, uploading, uplo
             </select>
           </div>
         <div>
-          <label className="block font-semibold mb-1">Holiday</label>
+          <label className="block font-semibold mb-1">Holidays</label>
           <HolidayCalendar
-            selectedDates={form.holiday ? [form.holiday] : []}
-            onDateChange={(dates) => setForm(s => ({ ...s, holiday: dates[0] || '' }))}
+            selectedDates={form.holidays || []}
+            onDateChange={(dates) => setForm(s => ({ ...s, holidays: dates }))}
           />
         </div>
         <div className="flex items-center space-x-2">

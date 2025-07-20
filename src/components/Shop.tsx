@@ -17,13 +17,13 @@ export const Shop: React.FC<ShopProps> = ({ shop }) => {
 
   // 休日チェック機能
   const isHoliday = () => {
-    if (!shop.holiday) return false;
+    if (!shop.holidays || shop.holidays.length === 0) return false;
     const today = new Date();
     const todayYear = today.getFullYear();
     const todayMonth = String(today.getMonth() + 1).padStart(2, '0');
     const todayDay = String(today.getDate()).padStart(2, '0');
     const todayString = `${todayYear}-${todayMonth}-${todayDay}`;
-    return shop.holiday === todayString;
+    return shop.holidays.includes(todayString);
   }
 
   const handleClick = () => {
@@ -111,7 +111,7 @@ export const Shop: React.FC<ShopProps> = ({ shop }) => {
               <div><span className="font-semibold">URL: </span>{shop.homepage_url ? (<a href={shop.homepage_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">{shop.homepage_url}</a>) : 'Not registered'}</div>
               <div><span className="font-semibold">Start Time: </span>{shop.hours_start || ''}</div>
               <div><span className="font-semibold">End Time: </span>{shop.hours_end || ''}</div>
-              <div><span className="font-semibold">Holiday: </span>{shop.holiday ? new Date(shop.holiday).toLocaleDateString() : 'Not set'}</div>
+              <div><span className="font-semibold">Holidays: </span>{shop.holidays && shop.holidays.length > 0 ? shop.holidays.map(date => new Date(date).toLocaleDateString()).join(', ') : 'Not set'}</div>
               <div><span className="font-semibold">Job Recruitment: </span>{shop.recruit ? 'Available' : 'Not available'}</div>
               <div><span className="font-semibold">Announcement: </span>{shop.commercial_text}</div>
               {/* ここまでが基本情報。AIチャット設定やラグはこの下に追加可能 */}

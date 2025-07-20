@@ -62,7 +62,7 @@ export default function Home() {
     appearance: '🏪',
     homepageUrl: '',
     visionEnabled: false,
-    holiday: '', // 休日フィールドを追加
+    holidays: [] as string[], // 休日リストフィールドを追加
   })
   const { favoriteShops } = useStore()
   const [showMyStreet, setShowMyStreet] = React.useState(false)
@@ -464,10 +464,10 @@ export default function Home() {
                               <label htmlFor="recruit">Job Recruitment Available</label>
                             </div>
                             <div>
-                              <label className="block font-semibold mb-1">Holiday</label>
+                              <label className="block font-semibold mb-1">Holidays</label>
                               <HolidayCalendar
-                                selectedDates={newShop.holiday ? [newShop.holiday] : []}
-                                onDateChange={(dates) => setNewShop(s => ({ ...s, holiday: dates[0] || '' }))}
+                                selectedDates={newShop.holidays || []}
+                                onDateChange={(dates) => setNewShop(s => ({ ...s, holidays: dates }))}
                               />
                             </div>
                             <div>
@@ -519,7 +519,7 @@ export default function Home() {
                                     address: newShop.address || '',
                                     homepage_url: newShop.homepageUrl || '',
                                     vision_enabled: newShop.visionEnabled ?? false,
-                                    holiday: newShop.holiday || '',
+                                    holidays: newShop.holidays || [],
                                     position,
                                   };
                                   // shopsテーブルにinsert
@@ -539,7 +539,7 @@ export default function Home() {
                                       stance: newShop.stance,
                                     }
                                   }));
-                                  setNewShop({ name: '', category: '', hours: '', hoursStart: '', hoursEnd: '', recruit: '', phone: '', address: '', catchphrase: '', commercialText: '', stance: '', appearance: '🏪', homepageUrl: '', visionEnabled: false, holiday: '' });
+                                  setNewShop({ name: '', category: '', hours: '', hoursStart: '', hoursEnd: '', recruit: '', phone: '', address: '', catchphrase: '', commercialText: '', stance: '', appearance: '🏪', homepageUrl: '', visionEnabled: false, holidays: [] });
                                   setAddingShop(false);
                                   setSelectedShopId(id);
                                 }}
