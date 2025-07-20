@@ -27,33 +27,33 @@ const ShopEditForm: React.FC<ShopEditFormProps> = ({ shop, lags, uploading, uplo
 
   return (
     <div>
-      <div className="font-semibold mb-2">店舗・事務所の編集</div>
+      <div className="font-semibold mb-2">Edit Shop & Office</div>
       <div className="space-y-2">
         <input
           type="text"
           className="border rounded px-2 py-1 w-full"
-          placeholder="店舗名"
+          placeholder="Shop Name"
           value={form.name}
           onChange={e => setForm(s => ({ ...s, name: e.target.value }))}
         />
         <input
           type="text"
           className="border rounded px-2 py-1 w-full"
-          placeholder="業種"
+          placeholder="Business Type"
           value={form.category}
           onChange={e => setForm(s => ({ ...s, category: e.target.value }))}
         />
         <input
           type="text"
           className="border rounded px-2 py-1 w-full"
-          placeholder="住所"
+          placeholder="Address"
           value={form.address}
           onChange={e => setForm(s => ({ ...s, address: e.target.value }))}
         />
         <input
           type="text"
           className="border rounded px-2 py-1 w-full"
-          placeholder="電話番号"
+          placeholder="Phone Number"
           value={form.phone}
           onChange={e => setForm(s => ({ ...s, phone: e.target.value }))}
         />
@@ -61,72 +61,72 @@ const ShopEditForm: React.FC<ShopEditFormProps> = ({ shop, lags, uploading, uplo
           type="text"
           className="border rounded px-2 py-1 w-full"
           placeholder="URL"
-          value={form.homepageUrl}
-          onChange={e => setForm(s => ({ ...s, homepageUrl: e.target.value }))}
+          value={form.homepage_url}
+          onChange={e => setForm(s => ({ ...s, homepage_url: e.target.value }))}
         />
-        <div className="flex space-x-2">
-          <select
-            className="border rounded px-2 py-1 w-1/2"
-            value={form.hoursStart || ''}
-            onChange={e => setForm(s => ({ ...s, hoursStart: e.target.value }))}
-          >
-            <option value="">開始時刻</option>
-            {Array.from({length: 24}, (_, i) => `${i}:00`).map(time => (
-              <option key={time} value={time}>{time}</option>
-            ))}
-          </select>
-          <select
-            className="border rounded px-2 py-1 w-1/2"
-            value={form.hoursEnd || ''}
-            onChange={e => setForm(s => ({ ...s, hoursEnd: e.target.value }))}
-          >
-            <option value="">終了時刻</option>
-            {Array.from({length: 24}, (_, i) => `${i}:00`).map(time => (
-              <option key={time} value={time}>{time}</option>
-            ))}
-          </select>
-        </div>
+                  <div className="flex space-x-2">
+            <select
+              className="border rounded px-2 py-1 w-1/2"
+              value={form.hours_start || ''}
+              onChange={e => setForm(s => ({ ...s, hours_start: e.target.value }))}
+            >
+              <option value="">Start Time</option>
+              {Array.from({length: 24}, (_, i) => `${i}:00`).map(time => (
+                <option key={time} value={time}>{time}</option>
+              ))}
+            </select>
+            <select
+              className="border rounded px-2 py-1 w-1/2"
+              value={form.hours_end || ''}
+              onChange={e => setForm(s => ({ ...s, hours_end: e.target.value }))}
+            >
+              <option value="">End Time</option>
+              {Array.from({length: 24}, (_, i) => `${i}:00`).map(time => (
+                <option key={time} value={time}>{time}</option>
+              ))}
+            </select>
+          </div>
         <div className="flex items-center space-x-2">
           <input
             type="checkbox"
             id="recruit-edit"
             checked={!!form.recruit}
-            onChange={e => setForm(s => ({ ...s, recruit: e.target.checked ? 'あり' : '' }))}
+            onChange={e => setForm(s => ({ ...s, recruit: e.target.checked ? 'Available' : '' }))}
           />
-          <label htmlFor="recruit-edit">求人募集あり</label>
+          <label htmlFor="recruit-edit">Job Recruitment Available</label>
         </div>
         <div>
-          <label className="block font-semibold mb-1">お知らせ</label>
+          <label className="block font-semibold mb-1">Announcement</label>
           <input
             type="text"
             className="border rounded px-2 py-1 w-full"
-            placeholder="お知らせ（例：セール情報など）"
-            value={form.commercialText}
-            onChange={e => setForm(s => ({ ...s, commercialText: e.target.value }))}
+            placeholder="Announcement (e.g., sale information)"
+            value={form.commercial_text}
+            onChange={e => setForm(s => ({ ...s, commercial_text: e.target.value }))}
           />
           <div className="flex items-center space-x-2 mt-1">
             <input
               type="checkbox"
               id="visionEnabled-edit"
-              checked={!!form.visionEnabled}
-              onChange={e => setForm(s => ({ ...s, visionEnabled: e.target.checked }))}
+              checked={!!form.vision_enabled}
+              onChange={e => setForm(s => ({ ...s, vision_enabled: e.target.checked }))}
             />
-            <label htmlFor="visionEnabled-edit">ビジョンに流す</label>
+            <label htmlFor="visionEnabled-edit">Display on Vision</label>
           </div>
         </div>
         <div>
-          <label className="block font-semibold mb-1">AIチャット設定</label>
+          <label className="block font-semibold mb-1">AI Chat Settings</label>
           <textarea
             className="border rounded px-2 py-1 w-full"
             rows={3}
             value={form.stance}
             onChange={e => setForm(s => ({ ...s, stance: e.target.value }))}
-            placeholder="AIチャットのキャラクターや説明文など"
+            placeholder="AI chat character and description"
           />
         </div>
         {/* --- ラグ（ファイルアップロード）欄 --- */}
         <div>
-          <label className="block font-semibold mb-1">データアップロード（ラグ）</label>
+          <label className="block font-semibold mb-1">Data Upload (Lag)</label>
           <input
             type="file"
             className="border rounded px-2 py-1 w-full"
@@ -136,32 +136,34 @@ const ShopEditForm: React.FC<ShopEditFormProps> = ({ shop, lags, uploading, uplo
             }}
             disabled={uploading}
           />
-          {uploading && <div className="text-xs text-blue-600 mt-1">アップロード中...</div>}
+          {uploading && <div className="text-xs text-blue-600 mt-1">Uploading...</div>}
           {uploadMessage && <div className="text-xs text-green-600 mt-1">{uploadMessage}</div>}
-          <div className="text-xs text-gray-500 mt-1">アップロードしたファイルはAIチャットのラグとして利用できます</div>
+          <div className="text-xs text-gray-500 mt-1">Uploaded files can be used as AI chat lag</div>
         </div>
         {/* --- ラグリスト --- */}
         <div>
-          <label className="block font-semibold mb-1 mt-2">アップロード済みラグ一覧</label>
-          <ul className="space-y-1">
-            {lags && lags.length > 0 ? lags.map(lag => (
-              <li key={lag.id} className="flex items-center space-x-2">
-                <a href={lag.file_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">{lag.file_name}</a>
-                <button className="text-xs text-red-500 hover:underline" onClick={() => onDeleteLag(lag.id)}>削除</button>
-              </li>
-            )) : <li className="text-gray-400">ラグはありません</li>}
-          </ul>
+          <label className="block font-semibold mb-1 mt-2">Uploaded Lag List</label>
+          <div className="max-h-32 overflow-y-auto border rounded p-2">
+            <ul className="space-y-1">
+              {lags && lags.length > 0 ? lags.map(lag => (
+                <li key={lag.id} className="flex items-center space-x-2">
+                  <a href={lag.file_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">{lag.file_name}</a>
+                  <button className="text-xs text-red-500 hover:underline" onClick={() => onDeleteLag(lag.id)}>Delete</button>
+                </li>
+              )) : <li className="text-gray-400">No lags available</li>}
+            </ul>
+          </div>
         </div>
         {/* --- 保存・キャンセル --- */}
         <div className="flex gap-2 mt-4">
           <button
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full"
             onClick={() => onSave(form)}
-          >保存</button>
+          >Save</button>
           <button
             className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 w-full"
             onClick={onCancel}
-          >キャンセル</button>
+          >Cancel</button>
         </div>
       </div>
     </div>

@@ -58,10 +58,10 @@ export const Shop: React.FC<ShopProps> = ({ shop }) => {
             <Info size={18} />
           </button>
           <button
-            onClick={e => { e.stopPropagation(); if (shop.homepageUrl) window.open(shop.homepageUrl, '_blank') }}
-            className={`p-1 rounded-full bg-white/80 hover:bg-white transition-colors ${shop.homepageUrl ? 'text-blue-600' : 'text-gray-400'}`}
+            onClick={e => { e.stopPropagation(); if (shop.homepage_url) window.open(shop.homepage_url, '_blank') }}
+            className={`p-1 rounded-full bg-white/80 hover:bg-white transition-colors ${shop.homepage_url ? 'text-blue-600' : 'text-gray-400'}`}
             title="ホームページ"
-            disabled={!shop.homepageUrl}
+            disabled={!shop.homepage_url}
           >
             <Globe size={18} />
           </button>
@@ -81,19 +81,19 @@ export const Shop: React.FC<ShopProps> = ({ shop }) => {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl p-6 min-w-[320px] max-w-md">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold">店舗情報</h2>
+              <h2 className="text-lg font-bold">Shop Information</h2>
               <button onClick={() => setShowInfo(false)} className="text-gray-500 hover:text-gray-800">×</button>
             </div>
             <div className="space-y-2">
-              <div><span className="font-semibold">店舗名：</span>{shop.name}</div>
-              <div><span className="font-semibold">業種：</span>{shop.category}</div>
-              <div><span className="font-semibold">住所：</span>{shop.address}</div>
-              <div><span className="font-semibold">電話番号：</span>{shop.phone}</div>
-              <div><span className="font-semibold">URL：</span>{shop.homepageUrl ? (<a href={shop.homepageUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">{shop.homepageUrl}</a>) : '未登録'}</div>
-              <div><span className="font-semibold">開始時間：</span>{shop.hoursStart || ''}</div>
-              <div><span className="font-semibold">終了時間：</span>{shop.hoursEnd || ''}</div>
-              <div><span className="font-semibold">求人募集：</span>{shop.recruit ? 'あり' : 'なし'}</div>
-              <div><span className="font-semibold">お知らせ：</span>{shop.commercialText}</div>
+              <div><span className="font-semibold">Shop Name: </span>{shop.name}</div>
+              <div><span className="font-semibold">Business Type: </span>{shop.category}</div>
+              <div><span className="font-semibold">Address: </span>{shop.address}</div>
+              <div><span className="font-semibold">Phone: </span>{shop.phone}</div>
+              <div><span className="font-semibold">URL: </span>{shop.homepage_url ? (<a href={shop.homepage_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">{shop.homepage_url}</a>) : 'Not registered'}</div>
+              <div><span className="font-semibold">Start Time: </span>{shop.hours_start || ''}</div>
+              <div><span className="font-semibold">End Time: </span>{shop.hours_end || ''}</div>
+              <div><span className="font-semibold">Job Recruitment: </span>{shop.recruit ? 'Available' : 'Not available'}</div>
+              <div><span className="font-semibold">Announcement: </span>{shop.commercial_text}</div>
               {/* ここまでが基本情報。AIチャット設定やラグはこの下に追加可能 */}
               {lags.length > 0 && (
                 <div className="mt-4">

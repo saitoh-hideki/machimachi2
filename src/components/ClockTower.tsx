@@ -18,14 +18,14 @@ export const ClockTower: React.FC = () => {
 
   // ビジョンに流す店舗のお知らせを動的に生成
   const commercialMessages = shops
-    .filter(shop => shop.visionEnabled && shop.commercialText)
-    .map(shop => ({ text: shop.commercialText, shop: shop.name }))
+    .filter(shop => shop.vision_enabled && shop.commercial_text)
+    .map(shop => ({ text: shop.commercial_text, shop: shop.name }))
     // デフォルトがなければモック
     .concat(shops.length === 0 ? [
-      { text: "今週末は大感謝セール開催中！", shop: "田中パン屋" },
-      { text: "母の日フェア実施中", shop: "花咲生花店" },
-      { text: "新刊入荷しました", shop: "山田書店" },
-      { text: "季節限定ドリンク登場", shop: "カフェ青山" },
+      { text: "Big Thanksgiving Sale this weekend!", shop: "Tanaka Bakery" },
+      { text: "Mother's Day Fair in progress", shop: "Hanasaki Flower Shop" },
+      { text: "New books have arrived", shop: "Yamada Bookstore" },
+      { text: "Seasonal limited drinks now available", shop: "Cafe Aoyama" },
     ] : []);
 
   const [currentAdIndex, setCurrentAdIndex] = useState(0)

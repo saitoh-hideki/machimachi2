@@ -5,6 +5,7 @@ import { useStore } from '@/store/useStore'
 import { ChatMessage } from '@/types'
 import { X, Send, Heart } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { toRomaji } from 'wanakana'
 
 // Supabase Edge FunctionのエンドポイントURLを指定
 const SUPABASE_EDGE_URL = "https://mokjknnkqshriboykvtc.supabase.co/functions/v1/chat";
@@ -20,6 +21,7 @@ export const ChatWindow: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputMessage, setInputMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [language, setLanguage] = useState<'ja' | 'en'>('ja')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const entity = selectedShop || selectedFacility
@@ -29,14 +31,18 @@ export const ChatWindow: React.FC = () => {
       const welcomeMessage: ChatMessage = {
         id: Date.now().toString(),
         role: 'assistant',
-        content: selectedShop 
-          ? `こんにちは！${selectedShop.name}へようこそ。${selectedShop.stance} 何かご質問はありますか？`
-          : `${selectedFacility!.name}です。${selectedFacility!.philosophy} お気軽にお声がけください。`,
+        content: language === 'ja' 
+          ? (selectedShop 
+              ? `こんにちは！${selectedShop.name}へようこそ。${selectedShop.stance} 何かご質問はありますか？`
+              : `${selectedFacility!.name}です。${selectedFacility!.philosophy} お気軽にお声がけください。`)
+          : (selectedShop 
+              ? `Hello! Welcome to ${selectedShop.name}. ${selectedShop.stance} Do you have any questions?`
+              : `This is ${selectedFacility!.name}. ${selectedFacility!.philosophy} Please feel free to ask us anything.`),
         timestamp: new Date(),
       }
       setMessages([welcomeMessage])
     }
-  }, [entity, selectedShop, selectedFacility])
+  }, [entity, selectedShop, selectedFacility, language])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -67,21 +73,28 @@ export const ChatWindow: React.FC = () => {
       const shopType = selectedShop ? selectedShop.category : undefined;
       const shopId = selectedShop ? selectedShop.id : undefined;
       const conversationHistory = messages.map(m => ({ role: m.role, content: m.content }));
+      
+      const requestBody = {
+        message: inputMessage,
+        conversationHistory,
+        shopType,
+        shopId,
+        language
+      };
+      
       const res = await fetch(SUPABASE_EDGE_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
         },
-        body: JSON.stringify({
-          message: inputMessage,
-          conversationHistory,
-          shopType,
-          shopId // ← 追加
-        })
+        body: JSON.stringify(requestBody)
       });
       const data = await res.json();
-      const aiContent = data.response || '申し訳ございません。応答を生成できませんでした。';
+      
+      const aiContent = data.response || (language === 'ja' 
+        ? '申し訳ございません。応答を生成できませんでした。'
+        : 'Sorry, I could not generate a response.');
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -103,6 +116,14 @@ export const ChatWindow: React.FC = () => {
     }
   }
 
+  // 店舗名をローマ字に変換する関数（英語モード時のみ）
+  const convertShopName = (name: string) => {
+    if (language === 'en') {
+      return toRomaji(name)
+    }
+    return name
+  }
+
   if (!entity) return null
 
   const isFavorite = selectedShop && favoriteShops.includes(selectedShop.id)
@@ -114,16 +135,16 @@ export const ChatWindow: React.FC = () => {
     const { shops } = useStore.getState();
     let displayShops = shops.length > 0 ? shops : [
       {
-        id: '1', name: '田中パン屋', category: 'パン屋', stance: '', appearance: '', commercialText: '', position: { row: 0, side: 'left' }
+        id: '1', name: 'Tanaka Bakery', category: 'Bakery', stance: '', appearance: '', commercialText: '', position: { row: 0, side: 'left' }
       },
       {
-        id: '2', name: '花咲生花店', category: '花屋', stance: '', appearance: '', commercialText: '', position: { row: 0, side: 'right' }
+        id: '2', name: 'Hanasaki Flower Shop', category: 'Flower Shop', stance: '', appearance: '', commercialText: '', position: { row: 0, side: 'right' }
       },
       {
-        id: '3', name: '山田書店', category: '本屋', stance: '', appearance: '', commercialText: '', position: { row: 1, side: 'left' }
+        id: '3', name: 'Yamada Bookstore', category: 'Bookstore', stance: '', appearance: '', commercialText: '', position: { row: 1, side: 'left' }
       },
       {
-        id: '4', name: 'カフェ青山', category: 'カフェ', stance: '', appearance: '', commercialText: '', position: { row: 1, side: 'right' }
+        id: '4', name: 'Cafe Aoyama', category: 'Cafe', stance: '', appearance: '', commercialText: '', position: { row: 1, side: 'right' }
       }
     ];
     let colIdx = -1;
@@ -162,7 +183,7 @@ export const ChatWindow: React.FC = () => {
             <span className="text-2xl">
               {selectedShop ? selectedShop.appearance : selectedFacility!.icon}
             </span>
-            <h3 className="font-bold text-lg">{entity.name}</h3>
+            <h3 className="font-bold text-lg">{convertShopName(entity.name)}</h3>
             {selectedShop && (
               <button
                 onClick={() => toggleFavorite(selectedShop.id)}
@@ -175,12 +196,24 @@ export const ChatWindow: React.FC = () => {
               </button>
             )}
           </div>
-          <button
-            onClick={handleClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-          >
-            <X size={20} />
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setLanguage(language === 'ja' ? 'en' : 'ja')}
+              className="px-3 py-2 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200"
+              title={language === 'ja' ? 'Switch to English' : '日本語に切り替え'}
+            >
+              <span className="text-sm font-medium text-blue-600">
+                {language === 'ja' ? 'EN' : 'JP'}
+              </span>
+            </button>
+
+            <button
+              onClick={handleClose}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -224,7 +257,7 @@ export const ChatWindow: React.FC = () => {
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="メッセージを入力..."
+              placeholder={language === 'ja' ? 'メッセージを入力...' : 'Type a message...'}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={isLoading}
             />

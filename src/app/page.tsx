@@ -11,12 +11,14 @@ import SettingsButton from '@/components/SettingsButton'
 import { TopLeftIcons } from '@/components/TopLeftIcons'
 import { Shop } from '../types'
 import { supabase } from '@/lib/supabaseClient';
-import ShopEditForm from '../components/ShopEditForm';
+import ShopEditForm from '@/components/ShopEditForm';
 import { v4 as uuidv4 } from 'uuid';
 
 export default function Home() {
   const { timeMode, setTimeMode } = useStore()
   const [showSettings, setShowSettings] = React.useState(false)
+  const [showSettingsOptions, setShowSettingsOptions] = React.useState(false)
+  const [settingsType, setSettingsType] = React.useState<'basic' | 'shop'>('basic')
   const [streetName, setStreetName] = React.useState('まちまちチャット商店街')
   const [editingStreetName, setEditingStreetName] = React.useState(streetName)
   const { facilities } = useStore()
@@ -163,7 +165,7 @@ export default function Home() {
       />
       <FacilitiesPanel visibleFacilityIds={visibleFacilityIds} facilityDetails={facilityDetails} />
       <ClockTower />
-      <SettingsButton onClick={() => setShowSettings(true)} />
+      <SettingsButton onClick={() => setShowSettingsOptions(true)} />
       
       <main className="relative z-10">
         <ShoppingStreet myStreet={showMyStreet} streetName={streetName} />
@@ -171,280 +173,396 @@ export default function Home() {
       
       <ChatWindow />
 
+      {/* 設定オプション選択画面 */}
+      {showSettingsOptions && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-gray-800">Settings</h2>
+              <button 
+                onClick={() => setShowSettingsOptions(false)} 
+                className="text-gray-500 hover:text-gray-800 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            <div className="space-y-4">
+              <button
+                onClick={() => {
+                  setSettingsType('basic')
+                  setShowSettingsOptions(false)
+                  setShowSettings(true)
+                }}
+                className="w-full p-4 text-left bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-colors"
+              >
+                <div className="text-lg font-semibold text-blue-800">Basic Settings</div>
+                <div className="text-sm text-blue-600 mt-1">Community name and public facilities</div>
+              </button>
+              <button
+                onClick={() => {
+                  setSettingsType('shop')
+                  setShowSettingsOptions(false)
+                  setShowSettings(true)
+                }}
+                className="w-full p-4 text-left bg-green-50 hover:bg-green-100 rounded-lg border border-green-200 transition-colors"
+              >
+                <div className="text-lg font-semibold text-green-800">Shops & Offices</div>
+                <div className="text-sm text-green-600 mt-1">Manage shops, offices and their settings</div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showSettings && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-8 min-w-[700px] max-w-3xl w-full">
+          <div className="bg-white rounded-lg shadow-xl p-8 min-w-[700px] max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold">設定</h2>
-              <button onClick={() => setShowSettings(false)} className="text-gray-500 hover:text-gray-800">×</button>
+              <h2 className="text-lg font-bold">
+                {settingsType === 'basic' ? 'Basic Settings' : 'Shops & Offices'}
+              </h2>
+              <button onClick={() => {
+                setShowSettings(false)
+                setShowSettingsOptions(true)
+              }} className="text-gray-500 hover:text-gray-800">×</button>
             </div>
-            <div className="mb-6">
-              <label className="block font-semibold mb-2">商店街名</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={editingStreetName}
-                  onChange={e => setEditingStreetName(e.target.value)}
-                  className="flex-1 border rounded px-3 py-2"
-                />
-                <button
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                  onClick={() => setStreetName(editingStreetName)}
-                >保存</button>
-              </div>
-            </div>
-            <div className="mb-4 flex space-x-4 border-b pb-2">
-              <button className={`px-4 py-2 rounded-t ${settingsTab === 'facility' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`} onClick={() => setSettingsTab('facility')}>公共施設</button>
-              <button className={`px-4 py-2 rounded-t ${settingsTab === 'shop' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`} onClick={() => setSettingsTab('shop')}>店舗・事務所</button>
-            </div>
-            {settingsTab === 'facility' && (
+            
+
+
+            {/* 基本設定 */}
+            {settingsType === 'basic' && (
               <div>
-                <div className="font-semibold mb-2">表示する施設アイコン</div>
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {facilities.map(facility => (
-                    <div key={facility.id} className="border rounded p-2 flex items-start space-x-2">
-                      <div className="pt-1">
-                        <input
-                          type="checkbox"
-                          checked={visibleFacilityIds.includes(facility.id)}
-                          onChange={e => {
-                            setVisibleFacilityIds(ids =>
-                              e.target.checked
-                                ? [...ids, facility.id]
-                                : ids.filter(id => id !== facility.id)
-                            )
-                          }}
-                        />
+                <div className="mb-6">
+                  <label className="block font-semibold mb-2">Community Name</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={editingStreetName}
+                      onChange={e => setEditingStreetName(e.target.value)}
+                      className="flex-1 border rounded px-3 py-2"
+                    />
+                    <button
+                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                      onClick={() => setStreetName(editingStreetName)}
+                    >Save</button>
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="font-semibold mb-2">Public Facilities</div>
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {facilities.map(facility => (
+                      <div key={facility.id} className="border rounded p-2 flex items-start space-x-2">
+                        <div className="pt-1">
+                          <input
+                            type="checkbox"
+                            checked={visibleFacilityIds.includes(facility.id)}
+                            onChange={e => {
+                              setVisibleFacilityIds(ids =>
+                                e.target.checked
+                                  ? [...ids, facility.id]
+                                  : ids.filter(id => id !== facility.id)
+                              )
+                            }}
+                          />
+                        </div>
+                        <span className="text-2xl pt-1">{facility.icon}</span>
+                        <div className="flex-1">
+                          <input
+                            type="text"
+                            className="border rounded px-2 py-1 w-full mb-1"
+                            value={facilityDetails[facility.id]?.name || ''}
+                            onChange={e => setFacilityDetails(details => ({
+                              ...details,
+                              [facility.id]: {
+                                ...details[facility.id],
+                                name: e.target.value
+                              }
+                            }))}
+                            placeholder="Facility Name"
+                          />
+                          <textarea
+                            className="border rounded px-2 py-1 w-full text-xs"
+                            rows={2}
+                            value={facilityDetails[facility.id]?.announcement || ''}
+                            onChange={e => setFacilityDetails(details => ({
+                              ...details,
+                              [facility.id]: {
+                                ...details[facility.id],
+                                announcement: e.target.value
+                              }
+                            }))}
+                            placeholder="Announcement Content"
+                          />
+                          <input type="file" className="border rounded px-2 py-1 w-full mt-1" />
+                          <div className="text-xs text-gray-500 mt-1">Uploaded files can be used as facility announcement lag (UI only for now)</div>
+                        </div>
                       </div>
-                      <span className="text-2xl pt-1">{facility.icon}</span>
-                      <div className="flex-1">
-                        <input
-                          type="text"
-                          className="border rounded px-2 py-1 w-full mb-1"
-                          value={facilityDetails[facility.id]?.name || ''}
-                          onChange={e => setFacilityDetails(details => ({
-                            ...details,
-                            [facility.id]: {
-                              ...details[facility.id],
-                              name: e.target.value
-                            }
-                          }))}
-                          placeholder="施設名"
-                        />
-                        <textarea
-                          className="border rounded px-2 py-1 w-full text-xs"
-                          rows={2}
-                          value={facilityDetails[facility.id]?.announcement || ''}
-                          onChange={e => setFacilityDetails(details => ({
-                            ...details,
-                            [facility.id]: {
-                              ...details[facility.id],
-                              announcement: e.target.value
-                            }
-                          }))}
-                          placeholder="お知らせ内容"
-                        />
-                        <input type="file" className="border rounded px-2 py-1 w-full mt-1" />
-                        <div className="text-xs text-gray-500 mt-1">アップロードしたファイルは施設のお知らせラグとして利用できます（今はUIのみ）</div>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
-            {settingsTab === 'shop' && (
-              <div className="flex gap-6 relative">
-                <div className="w-1/3 border-r pr-4 max-h-96 overflow-y-auto" ref={shopListRef}>
-                  <div className="font-semibold mb-2">店舗・事務所リスト</div>
-                  {shops.map(shop => (
-                    <div
-                      key={shop.id}
-                      className={`flex items-center space-x-2 p-2 rounded cursor-pointer ${selectedShopId === shop.id ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
-                      onClick={() => { setSelectedShopId(shop.id); setAddingShop(false); }}
-                    >
-                      <span className="text-2xl">{shop.appearance}</span>
-                      <span>{shop.name}</span>
-                    </div>
-                  ))}
-                  <button
-                    className="mt-4 w-full py-2 bg-green-600 text-white rounded shadow hover:bg-green-700 transition-colors"
-                    onClick={() => { setAddingShop(true); setSelectedShopId(null); }}
-                  >
-                    ＋ 店舗追加
-                  </button>
+
+            {/* ショップ&オフィス設定 */}
+            {settingsType === 'shop' && (
+              <div>
+                <div className="mb-4 flex space-x-4 border-b pb-2">
+                  <button className={`px-4 py-2 rounded-t ${settingsTab === 'facility' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`} onClick={() => setSettingsTab('facility')}>Public Facilities</button>
+                  <button className={`px-4 py-2 rounded-t ${settingsTab === 'shop' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`} onClick={() => setSettingsTab('shop')}>Shops & Offices</button>
                 </div>
-                <div className="flex-1">
-                  {addingShop ? (
-                    // 新規追加フォーム
-                    <div>
-                      <div className="font-semibold mb-2">新規店舗・事務所の追加</div>
-                      <div className="space-y-2">
-                        <input
-                          type="text"
-                          className="border rounded px-2 py-1 w-full"
-                          placeholder="店舗名"
-                          value={newShop.name}
-                          onChange={e => setNewShop(s => ({ ...s, name: e.target.value }))}
-                        />
-                        <input
-                          type="text"
-                          className="border rounded px-2 py-1 w-full"
-                          placeholder="業種"
-                          value={newShop.category}
-                          onChange={e => setNewShop(s => ({ ...s, category: e.target.value }))}
-                        />
-                        <input
-                          type="text"
-                          className="border rounded px-2 py-1 w-full"
-                          placeholder="住所"
-                          value={newShop.address}
-                          onChange={e => setNewShop(s => ({ ...s, address: e.target.value }))}
-                        />
-                        <input
-                          type="text"
-                          className="border rounded px-2 py-1 w-full"
-                          placeholder="電話番号"
-                          value={newShop.phone}
-                          onChange={e => setNewShop(s => ({ ...s, phone: e.target.value }))}
-                        />
-                        <input
-                          type="text"
-                          className="border rounded px-2 py-1 w-full"
-                          placeholder="URL"
-                          value={newShop.homepageUrl}
-                          onChange={e => setNewShop(s => ({ ...s, homepageUrl: e.target.value }))}
-                        />
-                        <div className="flex space-x-2">
-                          <select
-                            className="border rounded px-2 py-1 w-1/2"
-                            value={newShop.hoursStart || ''}
-                            onChange={e => setNewShop(s => ({ ...s, hoursStart: e.target.value }))}
-                          >
-                            <option value="">開始時刻</option>
-                            {Array.from({length: 24}, (_, i) => `${i}:00`).map(time => (
-                              <option key={time} value={time}>{time}</option>
-                            ))}
-                          </select>
-                          <select
-                            className="border rounded px-2 py-1 w-1/2"
-                            value={newShop.hoursEnd || ''}
-                            onChange={e => setNewShop(s => ({ ...s, hoursEnd: e.target.value }))}
-                          >
-                            <option value="">終了時刻</option>
-                            {Array.from({length: 24}, (_, i) => `${i}:00`).map(time => (
-                              <option key={time} value={time}>{time}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            id="recruit"
-                            checked={!!newShop.recruit}
-                            onChange={e => setNewShop(s => ({ ...s, recruit: e.target.checked ? 'あり' : '' }))}
-                          />
-                          <label htmlFor="recruit">求人募集あり</label>
-                        </div>
-                        <div>
-                          <label className="block font-semibold mb-1">お知らせ</label>
-                          <input
-                            type="text"
-                            className="border rounded px-2 py-1 w-full"
-                            placeholder="お知らせ（例：セール情報など）"
-                            value={newShop.commercialText}
-                            onChange={e => setNewShop(s => ({ ...s, commercialText: e.target.value }))}
-                          />
-                          <div className="flex items-center space-x-2 mt-1">
+                
+                {settingsTab === 'facility' && (
+                  <div>
+                    <div className="font-semibold mb-2">Display Facility Icons</div>
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {facilities.map(facility => (
+                        <div key={facility.id} className="border rounded p-2 flex items-start space-x-2">
+                          <div className="pt-1">
                             <input
                               type="checkbox"
-                              id="visionEnabled"
-                              checked={!!newShop.visionEnabled}
-                              onChange={e => setNewShop(s => ({ ...s, visionEnabled: e.target.checked }))}
+                              checked={visibleFacilityIds.includes(facility.id)}
+                              onChange={e => {
+                                setVisibleFacilityIds(ids =>
+                                  e.target.checked
+                                    ? [...ids, facility.id]
+                                    : ids.filter(id => id !== facility.id)
+                                )
+                              }}
                             />
-                            <label htmlFor="visionEnabled">ビジョンに流す</label>
+                          </div>
+                          <span className="text-2xl pt-1">{facility.icon}</span>
+                          <div className="flex-1">
+                            <input
+                              type="text"
+                              className="border rounded px-2 py-1 w-full mb-1"
+                              value={facilityDetails[facility.id]?.name || ''}
+                              onChange={e => setFacilityDetails(details => ({
+                                ...details,
+                                [facility.id]: {
+                                  ...details[facility.id],
+                                  name: e.target.value
+                                }
+                              }))}
+                              placeholder="Facility Name"
+                            />
+                            <textarea
+                              className="border rounded px-2 py-1 w-full text-xs"
+                              rows={2}
+                              value={facilityDetails[facility.id]?.announcement || ''}
+                              onChange={e => setFacilityDetails(details => ({
+                                ...details,
+                                [facility.id]: {
+                                  ...details[facility.id],
+                                  announcement: e.target.value
+                                }
+                              }))}
+                              placeholder="Announcement Content"
+                            />
+                            <input type="file" className="border rounded px-2 py-1 w-full mt-1" />
+                            <div className="text-xs text-gray-500 mt-1">Uploaded files can be used as facility announcement lag (UI only for now)</div>
                           </div>
                         </div>
-                        <div>
-                          <label className="block font-semibold mb-1">AIチャット設定</label>
-                          <textarea
-                            className="border rounded px-2 py-1 w-full"
-                            rows={3}
-                            value={newShop.stance}
-                            onChange={e => setNewShop(s => ({ ...s, stance: e.target.value }))}
-                            placeholder="AIチャットのキャラクターや説明文など"
-                          />
-                        </div>
-                        <div>
-                          <button
-                            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full"
-                            onClick={async () => {
-                              const id = uuidv4(); // ← uuidでID生成
-                              const position = getNextShopPosition(shops);
-                              const newShopObj = {
-                                id,
-                                name: newShop.name || '新店舗',
-                                category: newShop.category || '',
-                                stance: newShop.stance || '',
-                                appearance: newShop.appearance || '',
-                                commercial_text: newShop.commercialText || '',
-                                hours_start: newShop.hoursStart || '',
-                                hours_end: newShop.hoursEnd || '',
-                                recruit: newShop.recruit || '',
-                                phone: newShop.phone || '',
-                                address: newShop.address || '',
-                                homepage_url: newShop.homepageUrl || '',
-                                vision_enabled: newShop.visionEnabled ?? false,
-                                position,
-                              };
-                              // shopsテーブルにinsert
-                              const { error: shopInsertError } = await supabase.from('shops').insert(newShopObj);
-                              if (shopInsertError) {
-                                alert('店舗登録失敗: ' + shopInsertError.message);
-                                return;
-                              }
-                              setShops([...shops, newShopObj]);
-                              setShopDetails(details => ({
-                                ...details,
-                                [id]: {
-                                  name: newShop.name || '新店舗',
-                                  category: newShop.category,
-                                  hours: newShop.hours,
-                                  commercialText: newShop.commercialText,
-                                  stance: newShop.stance,
-                                }
-                              }));
-                              setNewShop({ name: '', category: '', hours: '', hoursStart: '', hoursEnd: '', recruit: '', phone: '', address: '', catchphrase: '', commercialText: '', stance: '', appearance: '🏪', homepageUrl: '', visionEnabled: false });
-                              setAddingShop(false);
-                              setSelectedShopId(id);
-                            }}
-                          >保存</button>
-                        </div>
-                      </div>
+                      ))}
                     </div>
-                  ) : selectedShopId ? (
-                    // 既存店舗編集フォーム
-                    <ShopEditForm
-                      shop={shops.find(s => s.id === selectedShopId)!}
-                      lags={shopLags[selectedShopId] || []}
-                      uploading={uploading}
-                      uploadMessage={uploadMessage}
-                      onUpload={handleUpload}
-                      onDeleteLag={async (lagId) => {
-                        await supabase.from('shop_lags').delete().eq('id', lagId);
-                        const { data: lags } = await supabase.from('shop_lags').select('id, file_url, file_name').eq('shop_id', selectedShopId);
-                        setShopLags(l => ({ ...l, [selectedShopId]: lags || [] }));
-                      }}
-                      onSave={updatedShop => {
-                        setShops(shops.map(s => s.id === selectedShopId ? { ...s, ...updatedShop } : s));
-                        setSelectedShopId(null);
-                        setAddingShop(false);
-                      }}
-                      onCancel={() => setSelectedShopId(null)}
-                    />
-                  ) : (
-                    <div className="text-gray-400">店舗・事務所を選択してください</div>
-                  )}
-                </div>
+                  </div>
+                )}
+                
+                {settingsTab === 'shop' && (
+                  <div className="flex gap-6 relative">
+                    <div className="w-1/3 border-r pr-4 max-h-96 overflow-y-auto" ref={shopListRef}>
+                      <div className="font-semibold mb-2">Shop & Office List</div>
+                      {shops.map(shop => (
+                        <div
+                          key={shop.id}
+                          className={`flex items-center space-x-2 p-2 rounded cursor-pointer ${selectedShopId === shop.id ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
+                          onClick={() => { setSelectedShopId(shop.id); setAddingShop(false); }}
+                        >
+                          <span className="text-2xl">{shop.appearance}</span>
+                          <span>{shop.name}</span>
+                        </div>
+                      ))}
+                      <button
+                        className="mt-4 w-full py-2 bg-green-600 text-white rounded shadow hover:bg-green-700 transition-colors"
+                        onClick={() => { setAddingShop(true); setSelectedShopId(null); }}
+                      >
+                        ＋ Add Shop
+                      </button>
+                    </div>
+                    <div className="flex-1 max-h-96 overflow-y-auto">
+                      {addingShop ? (
+                        // 新規追加フォーム
+                        <div>
+                          <div className="font-semibold mb-2">Add New Shop & Office</div>
+                          <div className="space-y-2">
+                            <input
+                              type="text"
+                              className="border rounded px-2 py-1 w-full"
+                              placeholder="Shop Name"
+                              value={newShop.name}
+                              onChange={e => setNewShop(s => ({ ...s, name: e.target.value }))}
+                            />
+                            <input
+                              type="text"
+                              className="border rounded px-2 py-1 w-full"
+                              placeholder="Business Type"
+                              value={newShop.category}
+                              onChange={e => setNewShop(s => ({ ...s, category: e.target.value }))}
+                            />
+                            <input
+                              type="text"
+                              className="border rounded px-2 py-1 w-full"
+                              placeholder="Address"
+                              value={newShop.address}
+                              onChange={e => setNewShop(s => ({ ...s, address: e.target.value }))}
+                            />
+                            <input
+                              type="text"
+                              className="border rounded px-2 py-1 w-full"
+                              placeholder="Phone Number"
+                              value={newShop.phone}
+                              onChange={e => setNewShop(s => ({ ...s, phone: e.target.value }))}
+                            />
+                            <input
+                              type="text"
+                              className="border rounded px-2 py-1 w-full"
+                              placeholder="URL"
+                              value={newShop.homepageUrl}
+                              onChange={e => setNewShop(s => ({ ...s, homepageUrl: e.target.value }))}
+                            />
+                            <div className="flex space-x-2">
+                              <select
+                                className="border rounded px-2 py-1 w-1/2"
+                                value={newShop.hoursStart || ''}
+                                onChange={e => setNewShop(s => ({ ...s, hoursStart: e.target.value }))}
+                              >
+                                <option value="">Start Time</option>
+                                {Array.from({length: 24}, (_, i) => `${i}:00`).map(time => (
+                                  <option key={time} value={time}>{time}</option>
+                                ))}
+                              </select>
+                              <select
+                                className="border rounded px-2 py-1 w-1/2"
+                                value={newShop.hoursEnd || ''}
+                                onChange={e => setNewShop(s => ({ ...s, hoursEnd: e.target.value }))}
+                              >
+                                <option value="">End Time</option>
+                                {Array.from({length: 24}, (_, i) => `${i}:00`).map(time => (
+                                  <option key={time} value={time}>{time}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                id="recruit"
+                                checked={!!newShop.recruit}
+                                onChange={e => setNewShop(s => ({ ...s, recruit: e.target.checked ? 'Available' : '' }))}
+                              />
+                              <label htmlFor="recruit">Job Recruitment Available</label>
+                            </div>
+                            <div>
+                              <label className="block font-semibold mb-1">Announcement</label>
+                              <input
+                                type="text"
+                                className="border rounded px-2 py-1 w-full"
+                                placeholder="Announcement (e.g., sale information)"
+                                value={newShop.commercialText}
+                                onChange={e => setNewShop(s => ({ ...s, commercialText: e.target.value }))}
+                              />
+                              <div className="flex items-center space-x-2 mt-1">
+                                <input
+                                  type="checkbox"
+                                  id="visionEnabled"
+                                  checked={!!newShop.visionEnabled}
+                                  onChange={e => setNewShop(s => ({ ...s, visionEnabled: e.target.checked }))}
+                                />
+                                <label htmlFor="visionEnabled">Display on Vision</label>
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block font-semibold mb-1">AI Chat Settings</label>
+                              <textarea
+                                className="border rounded px-2 py-1 w-full"
+                                rows={3}
+                                value={newShop.stance}
+                                onChange={e => setNewShop(s => ({ ...s, stance: e.target.value }))}
+                                placeholder="AI chat character and description"
+                              />
+                            </div>
+                            <div>
+                              <button
+                                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full"
+                                onClick={async () => {
+                                  const id = uuidv4(); // ← uuidでID生成
+                                  const position = getNextShopPosition(shops);
+                                  const newShopObj = {
+                                    id,
+                                    name: newShop.name || 'New Shop',
+                                    category: newShop.category || '',
+                                    stance: newShop.stance || '',
+                                    appearance: newShop.appearance || '',
+                                    commercial_text: newShop.commercialText || '',
+                                    hours_start: newShop.hoursStart || '',
+                                    hours_end: newShop.hoursEnd || '',
+                                    recruit: newShop.recruit || '',
+                                    phone: newShop.phone || '',
+                                    address: newShop.address || '',
+                                    homepage_url: newShop.homepageUrl || '',
+                                    vision_enabled: newShop.visionEnabled ?? false,
+                                    position,
+                                  };
+                                  // shopsテーブルにinsert
+                                  const { error: shopInsertError } = await supabase.from('shops').insert(newShopObj);
+                                  if (shopInsertError) {
+                                    alert('Shop registration failed: ' + shopInsertError.message);
+                                    return;
+                                  }
+                                  setShops([...shops, newShopObj]);
+                                  setShopDetails(details => ({
+                                    ...details,
+                                    [id]: {
+                                      name: newShop.name || 'New Shop',
+                                      category: newShop.category,
+                                      hours: newShop.hours,
+                                      commercial_text: newShop.commercialText,
+                                      stance: newShop.stance,
+                                    }
+                                  }));
+                                  setNewShop({ name: '', category: '', hours: '', hoursStart: '', hoursEnd: '', recruit: '', phone: '', address: '', catchphrase: '', commercialText: '', stance: '', appearance: '🏪', homepageUrl: '', visionEnabled: false });
+                                  setAddingShop(false);
+                                  setSelectedShopId(id);
+                                }}
+                              >Save</button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : selectedShopId ? (
+                        // 既存店舗編集フォーム
+                        <ShopEditForm
+                          shop={shops.find(s => s.id === selectedShopId)!}
+                          lags={shopLags[selectedShopId] || []}
+                          uploading={uploading}
+                          uploadMessage={uploadMessage}
+                          onUpload={handleUpload}
+                          onDeleteLag={async (lagId) => {
+                            await supabase.from('shop_lags').delete().eq('id', lagId);
+                            const { data: lags } = await supabase.from('shop_lags').select('id, file_url, file_name').eq('shop_id', selectedShopId);
+                            setShopLags(l => ({ ...l, [selectedShopId]: lags || [] }));
+                          }}
+                          onSave={updatedShop => {
+                            setShops(shops.map(s => s.id === selectedShopId ? { ...s, ...updatedShop } : s));
+                            setSelectedShopId(null);
+                            setAddingShop(false);
+                          }}
+                          onCancel={() => setSelectedShopId(null)}
+                        />
+                      ) : (
+                        <div className="text-gray-400">Please select a shop or office</div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
