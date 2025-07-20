@@ -28,7 +28,79 @@ export const ChatWindow: React.FC = () => {
 
   // 店舗名をローマ字に変換する関数（英語モード時のみ）
   const convertShopName = (name: string) => {
+    console.log('convertShopName called:', { name, language, toRomajiResult: toRomaji(name) })
     if (language === 'en') {
+      // 漢字を含む名前の場合は、手動でマッピング
+      const nameMapping: Record<string, string> = {
+        '斉藤': 'Saitou',
+        '田中': 'Tanaka',
+        '山田': 'Yamada',
+        '佐藤': 'Sato',
+        '鈴木': 'Suzuki',
+        '高橋': 'Takahashi',
+        '渡辺': 'Watanabe',
+        '伊藤': 'Ito',
+        '中村': 'Nakamura',
+        '小林': 'Kobayashi',
+        '加藤': 'Kato',
+        '吉田': 'Yoshida',
+        '山本': 'Yamamoto',
+        '松本': 'Matsumoto',
+        '井上': 'Inoue',
+        '木村': 'Kimura',
+        '林': 'Hayashi',
+        '斎藤': 'Saitou',
+        '清水': 'Shimizu',
+        '森': 'Mori',
+        '池田': 'Ikeda',
+        '橋本': 'Hashimoto',
+        '阿部': 'Abe',
+        '石川': 'Ishikawa',
+        '山下': 'Yamashita',
+        '中島': 'Nakajima',
+        '石井': 'Ishii',
+        '小川': 'Ogawa',
+        '前田': 'Maeda',
+        '岡田': 'Okada',
+        '長谷川': 'Hasegawa',
+        '藤田': 'Fujita',
+        '近藤': 'Kondo',
+        '青木': 'Aoki',
+        '福田': 'Fukuda',
+        '西村': 'Nishimura',
+        '藤井': 'Fujii',
+        '岡本': 'Okamoto',
+        '松田': 'Matsuda',
+        '中川': 'Nakagawa',
+        '中野': 'Nakano',
+        '原田': 'Harada',
+        '田村': 'Tamura',
+        '竹内': 'Takeuchi',
+        '和田': 'Wada',
+        '山口': 'Yamaguchi',
+        '河野': 'Kono',
+        '市役所': 'City Hall',
+        '学校': 'School',
+        '図書館': 'Library',
+        '商工会議所': 'Chamber of Commerce',
+        'スマートライフAO': 'Smart Life AO',
+        '公園': 'Park',
+        '体育館': 'Gymnasium'
+      }
+      
+      // マッピングに存在する場合はそれを使用、そうでなければtoRomajiを使用
+      if (nameMapping[name]) {
+        return nameMapping[name]
+      }
+      
+      // 部分一致を試す（例：「斉藤商店」→「Saitou Store」）
+      for (const [japanese, english] of Object.entries(nameMapping)) {
+        if (name.includes(japanese)) {
+          return name.replace(japanese, english)
+        }
+      }
+      
+      // 最後の手段としてtoRomajiを使用
       return toRomaji(name)
     }
     return name
