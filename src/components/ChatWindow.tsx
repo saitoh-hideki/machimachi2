@@ -26,6 +26,14 @@ export const ChatWindow: React.FC = () => {
 
   const entity = selectedShop || selectedFacility
 
+  // 店舗名をローマ字に変換する関数（英語モード時のみ）
+  const convertShopName = (name: string) => {
+    if (language === 'en') {
+      return toRomaji(name)
+    }
+    return name
+  }
+
   useEffect(() => {
     if (entity) {
       const welcomeMessage: ChatMessage = {
@@ -33,11 +41,11 @@ export const ChatWindow: React.FC = () => {
         role: 'assistant',
         content: language === 'ja' 
           ? (selectedShop 
-              ? `こんにちは！${selectedShop.name}へようこそ。${selectedShop.stance} 何かご質問はありますか？`
-              : `${selectedFacility!.name}です。${selectedFacility!.philosophy} お気軽にお声がけください。`)
+              ? `こんにちは！${convertShopName(selectedShop.name)}へようこそ。${selectedShop.stance} 何かご質問はありますか？`
+              : `${convertShopName(selectedFacility!.name)}です。${selectedFacility!.philosophy} お気軽にお声がけください。`)
           : (selectedShop 
-              ? `Hello! Welcome to ${selectedShop.name}. ${selectedShop.stance} Do you have any questions?`
-              : `This is ${selectedFacility!.name}. ${selectedFacility!.philosophy} Please feel free to ask us anything.`),
+              ? `Hello! Welcome to ${convertShopName(selectedShop.name)}. ${selectedShop.stance} Do you have any questions?`
+              : `This is ${convertShopName(selectedFacility!.name)}. ${selectedFacility!.philosophy} Please feel free to ask us anything.`),
         timestamp: new Date(),
       }
       setMessages([welcomeMessage])
@@ -114,14 +122,6 @@ export const ChatWindow: React.FC = () => {
       e.preventDefault()
       handleSendMessage()
     }
-  }
-
-  // 店舗名をローマ字に変換する関数（英語モード時のみ）
-  const convertShopName = (name: string) => {
-    if (language === 'en') {
-      return toRomaji(name)
-    }
-    return name
   }
 
   if (!entity) return null
