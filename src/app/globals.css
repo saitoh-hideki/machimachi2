@@ -49,6 +49,9 @@
 
   .night-mode {
     @apply bg-gradient-to-b from-black via-gray-900 to-gray-800;
+    background-color: #111;
+    background-image: repeating-radial-gradient(circle, #444 0px, #444 1.5px, transparent 3px, transparent 40px);
+    background-size: 40px 40px;
   }
 
   .night-mode .shop-building {
@@ -61,9 +64,15 @@
 
   .day-mode {
     @apply bg-sky-day;
+    background-image: repeating-radial-gradient(circle, #fff 0px, #fff 2px, transparent 4px, transparent 40px);
+    background-size: 40px 40px;
   }
 
   .day-mode .car-headlight {
     @apply opacity-0;
+  }
+
+  .night-mode .facility-label-night {
+    color: #fff !important;
   }
 }

@@ -11,7 +11,7 @@ import SettingsButton from '@/components/SettingsButton'
 import { TopLeftIcons } from '@/components/TopLeftIcons'
 import { Shop } from '../types'
 import { supabase } from '@/lib/supabaseClient';
-import ShopEditForm from '@/components/ShopEditForm';
+import EntityEditForm from '@/components/EntityEditForm';
 import { HolidayCalendar } from '@/components/HolidayCalendar';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -22,17 +22,34 @@ export default function Home() {
   const [settingsType, setSettingsType] = React.useState<'basic' | 'shop'>('basic')
   const [streetName, setStreetName] = React.useState('まちまちチャット商店街')
   const [editingStreetName, setEditingStreetName] = React.useState(streetName)
-  const { facilities } = useStore()
-  const [visibleFacilityIds, setVisibleFacilityIds] = React.useState(facilities.filter(f => f.isVisible).map(f => f.id))
-  // 施設ごとの名前・お知らせ内容を管理
-  const [facilityDetails, setFacilityDetails] = React.useState(() =>
-    facilities.reduce((acc, f) => {
-      acc[f.id] = { name: f.name, announcement: '' }
-      return acc
-    }, {} as Record<string, { name: string; announcement: string }>)
-  )
+  const { facilities, setFacilities, communityTitle, setCommunityTitle } = useStore()
+  const [editingCommunityTitle, setEditingCommunityTitle] = React.useState(communityTitle)
+  React.useEffect(() => { setEditingCommunityTitle(communityTitle) }, [communityTitle])
+  const [selectedFacilityId, setSelectedFacilityId] = React.useState<string | null>(null)
+  const [addingFacility, setAddingFacility] = React.useState(false)
+  // 施設追加時の初期値
+  const initialFacility = {
+    id: uuidv4(),
+    name: '',
+    icon: '',
+    category: '',
+    philosophy: '',
+    responseStance: '',
+    isVisible: true,
+    stance: '',
+    commercial_text: '',
+    vision_enabled: false,
+    address: '',
+    phone: '',
+    homepage_url: '',
+    hours_start: '',
+    hours_end: '',
+    recruit: '',
+    holidays: [],
+    communityName: '',
+  };
+  const [newFacility, setNewFacility] = React.useState(initialFacility);
   const { shops, setShops } = useStore()
-  const [settingsTab, setSettingsTab] = React.useState<'facility' | 'shop'>('facility')
   const [selectedShopId, setSelectedShopId] = React.useState<string | null>(null)
   const [shopDetails, setShopDetails] = React.useState(() =>
     shops.reduce((acc, s) => {
@@ -47,23 +64,25 @@ export default function Home() {
     }, {} as Record<string, { name: string; category: string; hours: string; commercial_text: string; stance: string }>)
   )
   const [addingShop, setAddingShop] = React.useState(false)
-  const [newShop, setNewShop] = React.useState({
+  const initialShop = {
+    id: uuidv4(),
     name: '',
+    icon: '',
     category: '',
-    hours: '',
-    hoursStart: '',
-    hoursEnd: '',
+    stance: '',
+    appearance: '',
+    commercial_text: '',
+    hours_start: '',
+    hours_end: '',
     recruit: '',
     phone: '',
     address: '',
-    catchphrase: '',
-    commercialText: '',
-    stance: '',
-    appearance: '🏪',
-    homepageUrl: '',
-    visionEnabled: false,
-    holidays: [] as string[], // 休日リストフィールドを追加
-  })
+    homepage_url: '',
+    vision_enabled: false,
+    position: {},
+    holidays: [] as string[],
+  };
+  const [newShop, setNewShop] = React.useState(initialShop);
   const { favoriteShops } = useStore()
   const [showMyStreet, setShowMyStreet] = React.useState(false)
   const shopListRef = useRef<HTMLDivElement>(null)
@@ -142,22 +161,34 @@ export default function Home() {
     setUploading(false);
   };
 
+  const handleSaveFacility = async (updatedFacility: any) => {
+    setFacilities(facilities.map(f => f.id === selectedFacilityId ? { ...f, ...updatedFacility } : f));
+    setSelectedFacilityId(null);
+    setAddingFacility(false);
+  };
+
+  const handleSaveShop = async (updatedShop: any) => {
+    setShops(shops.map(s => s.id === selectedShopId ? { ...s, ...updatedShop } : s));
+    setSelectedShopId(null);
+    setAddingShop(false);
+  };
+
   return (
     <div className={`min-h-screen transition-colors duration-1000 ${
       timeMode === 'night' ? 'night-mode' : 'day-mode'
     }`}>
       {/* 地球のイメージとなる大きな丸（さらにうっすら・地球っぽく、波模様追加） */}
+      {/* 削除ここから
       <div className="fixed left-1/2 bottom-[-400px] -translate-x-1/2 z-0 pointer-events-none">
         <div className="w-[1200px] h-[1200px] rounded-full bg-gradient-to-b from-white via-blue-50 to-green-100 shadow-2xl opacity-40 relative">
-          {/* 雲や大陸のニュアンス */}
           <div className="absolute left-1/4 top-1/3 w-[300px] h-[120px] bg-white/30 rounded-full blur-2xl opacity-60" />
           <div className="absolute right-1/5 bottom-1/4 w-[220px] h-[90px] bg-green-200/30 rounded-full blur-2xl opacity-40" />
-          {/* 波模様（同系色で地球感アップ） */}
           <div className="absolute left-1/3 top-1/2 w-[400px] h-[60px] bg-blue-200/30 rounded-full blur-2xl opacity-30 rotate-12" />
           <div className="absolute left-1/2 top-2/3 w-[350px] h-[50px] bg-green-300/20 rounded-full blur-2xl opacity-30 -rotate-6" />
           <div className="absolute right-1/3 top-1/4 w-[250px] h-[40px] bg-blue-100/30 rounded-full blur-2xl opacity-20 rotate-3" />
         </div>
       </div>
+      削除ここまで */}
       <div className="fixed inset-0 bg-gradient-to-b from-transparent via-transparent to-green-200/30 pointer-events-none" />
       
       <TopLeftIcons
@@ -165,12 +196,15 @@ export default function Home() {
         onToggleMyStreet={() => setShowMyStreet(s => !s)}
         onToggleNightMode={() => setTimeMode(timeMode === 'day' ? 'night' : 'day')}
       />
-      <FacilitiesPanel visibleFacilityIds={visibleFacilityIds} facilityDetails={facilityDetails} />
+      <FacilitiesPanel visibleFacilityIds={facilities.filter(f => f.isVisible).map(f => f.id)} facilityDetails={facilities.reduce((acc, f) => {
+        acc[f.id] = { name: f.name, announcement: '' }
+        return acc
+      }, {} as Record<string, { name: string; announcement: string }>)} />
       <ClockTower />
       <SettingsButton onClick={() => setShowSettingsOptions(true)} />
       
       <main className="relative z-10">
-        <ShoppingStreet myStreet={showMyStreet} streetName={streetName} />
+        <ShoppingStreet myStreet={showMyStreet} streetName={communityTitle} />
       </main>
       
       <ChatWindow />
@@ -228,351 +262,355 @@ export default function Home() {
                 setShowSettingsOptions(true)
               }} className="text-gray-500 hover:text-gray-800">×</button>
             </div>
-            
 
-
-            {/* 基本設定 */}
+            {/* コミュニティ名編集欄を追加 */}
             {settingsType === 'basic' && (
-              <div>
-                <div className="mb-6">
-                  <label className="block font-semibold mb-2">Community Name</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={editingStreetName}
-                      onChange={e => setEditingStreetName(e.target.value)}
-                      className="flex-1 border rounded px-3 py-2"
-                    />
-                    <button
-                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                      onClick={() => setStreetName(editingStreetName)}
-                    >Save</button>
-                  </div>
+              <div className="mb-6">
+                <label className="block font-semibold mb-1">Community Name</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    className="border rounded px-2 py-1 w-full"
+                    value={editingCommunityTitle}
+                    onChange={e => setEditingCommunityTitle(e.target.value)}
+                    placeholder="e.g. MachiMachi Shopping Street"
+                  />
+                  <button
+                    className="px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    onClick={() => setCommunityTitle(editingCommunityTitle)}
+                    disabled={editingCommunityTitle === communityTitle}
+                  >Save</button>
                 </div>
-                
-                <div>
+              </div>
+            )}
+
+
+            {/* 基本設定（公共施設） */}
+            {settingsType === 'basic' && (
+              <div className="flex gap-6 relative">
+                {/* 左カラム：施設リスト＋追加ボタン */}
+                <div className="w-1/3 border-r pr-4 max-h-96 overflow-y-auto">
                   <div className="font-semibold mb-2">Public Facilities</div>
-                  <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {facilities.map(facility => (
-                      <div key={facility.id} className="border rounded p-2 flex items-start space-x-2">
-                        <div className="pt-1">
+                  {facilities.map(facility => (
+                    <div
+                      key={facility.id}
+                      className={`flex items-center space-x-2 p-2 rounded cursor-pointer ${selectedFacilityId === facility.id ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
+                      onClick={() => { setSelectedFacilityId(facility.id); setAddingFacility(false); }}
+                    >
+                      <span className="text-2xl">{facility.icon}</span>
+                      <span>{facility.name}</span>
+                      <input
+                        type="checkbox"
+                        checked={facility.isVisible}
+                        onChange={e => {
+                          setFacilities(facilities.map(f => f.id === facility.id ? { ...f, isVisible: e.target.checked } : f));
+                        }}
+                        className="ml-auto"
+                        title="Show/Hide"
+                      />
+                    </div>
+                  ))}
+                  <button
+                    className="mt-4 w-full py-2 bg-green-600 text-white rounded shadow hover:bg-green-700 transition-colors"
+                    onClick={() => {
+                      setAddingFacility(true);
+                      setSelectedFacilityId(null);
+                      setNewFacility({ ...initialFacility, id: uuidv4() });
+                    }}
+                  >
+                    ＋ Add Facility
+                  </button>
+                </div>
+                {/* 右カラム：編集パネル */}
+                <div className="flex-1 max-h-96 overflow-y-auto">
+                  {addingFacility ? (
+                    // 新規追加フォーム
+                    <div>
+                      <div className="font-semibold mb-2">Add New Facility</div>
+                      <div className="space-y-2">
+                        <input
+                          type="text"
+                          className="border rounded px-2 py-1 w-full"
+                          placeholder="Facility Name"
+                          value={newFacility.name}
+                          onChange={e => setNewFacility(s => ({ ...s, name: e.target.value }))}
+                        />
+                        <input
+                          type="text"
+                          className="border rounded px-2 py-1 w-full"
+                          placeholder="Icon (emoji)"
+                          value={newFacility.icon}
+                          onChange={e => setNewFacility(s => ({ ...s, icon: e.target.value }))}
+                        />
+                        <input
+                          type="text"
+                          className="border rounded px-2 py-1 w-full"
+                          placeholder="Category"
+                          value={newFacility.category}
+                          onChange={e => setNewFacility(s => ({ ...s, category: e.target.value }))}
+                        />
+                        <input
+                          type="text"
+                          className="border rounded px-2 py-1 w-full"
+                          placeholder="Philosophy"
+                          value={newFacility.philosophy}
+                          onChange={e => setNewFacility(s => ({ ...s, philosophy: e.target.value }))}
+                        />
+                        <input
+                          type="text"
+                          className="border rounded px-2 py-1 w-full"
+                          placeholder="Response Stance"
+                          value={newFacility.responseStance}
+                          onChange={e => setNewFacility(s => ({ ...s, responseStance: e.target.value }))}
+                        />
+                        <div className="flex items-center space-x-2">
                           <input
                             type="checkbox"
-                            checked={visibleFacilityIds.includes(facility.id)}
-                            onChange={e => {
-                              setVisibleFacilityIds(ids =>
-                                e.target.checked
-                                  ? [...ids, facility.id]
-                                  : ids.filter(id => id !== facility.id)
-                              )
-                            }}
+                            id="facilityVisible"
+                            checked={!!newFacility.isVisible}
+                            onChange={e => setNewFacility(s => ({ ...s, isVisible: e.target.checked }))}
                           />
+                          <label htmlFor="facilityVisible">Show on Street</label>
                         </div>
-                        <span className="text-2xl pt-1">{facility.icon}</span>
-                        <div className="flex-1">
-                          <input
-                            type="text"
-                            className="border rounded px-2 py-1 w-full mb-1"
-                            value={facilityDetails[facility.id]?.name || ''}
-                            onChange={e => setFacilityDetails(details => ({
-                              ...details,
-                              [facility.id]: {
-                                ...details[facility.id],
-                                name: e.target.value
-                              }
-                            }))}
-                            placeholder="Facility Name"
-                          />
-                          <textarea
-                            className="border rounded px-2 py-1 w-full text-xs"
-                            rows={2}
-                            value={facilityDetails[facility.id]?.announcement || ''}
-                            onChange={e => setFacilityDetails(details => ({
-                              ...details,
-                              [facility.id]: {
-                                ...details[facility.id],
-                                announcement: e.target.value
-                              }
-                            }))}
-                            placeholder="Announcement Content"
-                          />
-                          <input type="file" className="border rounded px-2 py-1 w-full mt-1" />
-                          <div className="text-xs text-gray-500 mt-1">Uploaded files can be used as facility announcement lag (UI only for now)</div>
+                        <div>
+                          <button
+                            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full"
+                            onClick={() => {
+                              const id = uuidv4();
+                              setFacilities([...facilities, { ...newFacility, id }]);
+                              setNewFacility({ ...initialFacility, id: uuidv4() });
+                              setAddingFacility(false);
+                              setSelectedFacilityId(id);
+                            }}
+                          >Save</button>
+                        </div>
+                        <div>
+                          <button
+                            className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 w-full"
+                            onClick={() => {
+                              setAddingFacility(false);
+                              setNewFacility({ ...initialFacility, id: uuidv4() });
+                            }}
+                          >Cancel</button>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ) : selectedFacilityId ? (
+                    // 施設編集パネル
+                    <EntityEditForm
+                      entity={facilities.find(f => f.id === selectedFacilityId)!}
+                      entityType="facility"
+                      onSave={handleSaveFacility}
+                      onCancel={() => setSelectedFacilityId(null)}
+                    />
+                  ) : (
+                    <div className="text-gray-400">Please select a facility</div>
+                  )}
                 </div>
               </div>
             )}
 
             {/* ショップ&オフィス設定 */}
             {settingsType === 'shop' && (
-              <div>
-                <div className="mb-4 flex space-x-4 border-b pb-2">
-                  <button className={`px-4 py-2 rounded-t ${settingsTab === 'facility' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`} onClick={() => setSettingsTab('facility')}>Public Facilities</button>
-                  <button className={`px-4 py-2 rounded-t ${settingsTab === 'shop' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`} onClick={() => setSettingsTab('shop')}>Shops & Offices</button>
+              <div className="flex gap-6 relative">
+                <div className="w-1/3 border-r pr-4 max-h-96 overflow-y-auto" ref={shopListRef}>
+                  <div className="font-semibold mb-2">Shop & Office List</div>
+                  {shops.map(shop => (
+                    <div
+                      key={shop.id}
+                      className={`flex items-center space-x-2 p-2 rounded cursor-pointer ${selectedShopId === shop.id ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
+                      onClick={() => { setSelectedShopId(shop.id); setAddingShop(false); }}
+                    >
+                      <span className="text-2xl">{shop.appearance}</span>
+                      <span>{shop.name}</span>
+                    </div>
+                  ))}
+                  <button
+                    className="mt-4 w-full py-2 bg-green-600 text-white rounded shadow hover:bg-green-700 transition-colors"
+                    onClick={() => { setAddingShop(true); setSelectedShopId(null); }}
+                  >
+                    ＋ Add Shop
+                  </button>
                 </div>
-                
-                {settingsTab === 'facility' && (
-                  <div>
-                    <div className="font-semibold mb-2">Display Facility Icons</div>
-                    <div className="space-y-2 max-h-60 overflow-y-auto">
-                      {facilities.map(facility => (
-                        <div key={facility.id} className="border rounded p-2 flex items-start space-x-2">
-                          <div className="pt-1">
+                <div className="flex-1 max-h-96 overflow-y-auto">
+                  {addingShop ? (
+                    // 新規追加フォーム
+                    <div>
+                      <div className="font-semibold mb-2">Add New Shop & Office</div>
+                      <div className="space-y-2">
+                        <input
+                          type="text"
+                          className="border rounded px-2 py-1 w-full"
+                          placeholder="Shop Name"
+                          value={newShop.name}
+                          onChange={e => setNewShop(s => ({ ...s, name: e.target.value }))}
+                        />
+                        <input
+                          type="text"
+                          className="border rounded px-2 py-1 w-full"
+                          placeholder="Business Type"
+                          value={newShop.category}
+                          onChange={e => setNewShop(s => ({ ...s, category: e.target.value }))}
+                        />
+                        <input
+                          type="text"
+                          className="border rounded px-2 py-1 w-full"
+                          placeholder="Address"
+                          value={newShop.address}
+                          onChange={e => setNewShop(s => ({ ...s, address: e.target.value }))}
+                        />
+                        <input
+                          type="text"
+                          className="border rounded px-2 py-1 w-full"
+                          placeholder="Phone Number"
+                          value={newShop.phone}
+                          onChange={e => setNewShop(s => ({ ...s, phone: e.target.value }))}
+                        />
+                        <input
+                          type="text"
+                          className="border rounded px-2 py-1 w-full"
+                          placeholder="URL"
+                          value={newShop.homepage_url}
+                          onChange={e => setNewShop(s => ({ ...s, homepage_url: e.target.value }))}
+                        />
+                        <div className="flex space-x-2">
+                          <select
+                            className="border rounded px-2 py-1 w-1/2"
+                            value={newShop.hours_start || ''}
+                            onChange={e => setNewShop(s => ({ ...s, hours_start: e.target.value }))}
+                          >
+                            <option value="">Start Time</option>
+                            {Array.from({length: 24}, (_, i) => `${i}:00`).map(time => (
+                              <option key={time} value={time}>{time}</option>
+                            ))}
+                          </select>
+                          <select
+                            className="border rounded px-2 py-1 w-1/2"
+                            value={newShop.hours_end || ''}
+                            onChange={e => setNewShop(s => ({ ...s, hours_end: e.target.value }))}
+                          >
+                            <option value="">End Time</option>
+                            {Array.from({length: 24}, (_, i) => `${i}:00`).map(time => (
+                              <option key={time} value={time}>{time}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="recruit"
+                            checked={!!newShop.recruit}
+                            onChange={e => setNewShop(s => ({ ...s, recruit: e.target.checked ? 'Available' : '' }))}
+                          />
+                          <label htmlFor="recruit">Job Recruitment Available</label>
+                        </div>
+                        <div>
+                          <label className="block font-semibold mb-1">Holidays</label>
+                          <HolidayCalendar
+                            selectedDates={newShop.holidays || []}
+                            onDateChange={(dates) => setNewShop(s => ({ ...s, holidays: dates }))}
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-semibold mb-1">Announcement</label>
+                          <input
+                            type="text"
+                            className="border rounded px-2 py-1 w-full"
+                            placeholder="Announcement (e.g., sale information)"
+                            value={newShop.commercial_text}
+                            onChange={e => setNewShop(s => ({ ...s, commercial_text: e.target.value }))}
+                          />
+                          <div className="flex items-center space-x-2 mt-1">
                             <input
                               type="checkbox"
-                              checked={visibleFacilityIds.includes(facility.id)}
-                              onChange={e => {
-                                setVisibleFacilityIds(ids =>
-                                  e.target.checked
-                                    ? [...ids, facility.id]
-                                    : ids.filter(id => id !== facility.id)
-                                )
-                              }}
+                              id="visionEnabled"
+                              checked={!!newShop.vision_enabled}
+                              onChange={e => setNewShop(s => ({ ...s, vision_enabled: e.target.checked }))}
                             />
-                          </div>
-                          <span className="text-2xl pt-1">{facility.icon}</span>
-                          <div className="flex-1">
-                            <input
-                              type="text"
-                              className="border rounded px-2 py-1 w-full mb-1"
-                              value={facilityDetails[facility.id]?.name || ''}
-                              onChange={e => setFacilityDetails(details => ({
-                                ...details,
-                                [facility.id]: {
-                                  ...details[facility.id],
-                                  name: e.target.value
-                                }
-                              }))}
-                              placeholder="Facility Name"
-                            />
-                            <textarea
-                              className="border rounded px-2 py-1 w-full text-xs"
-                              rows={2}
-                              value={facilityDetails[facility.id]?.announcement || ''}
-                              onChange={e => setFacilityDetails(details => ({
-                                ...details,
-                                [facility.id]: {
-                                  ...details[facility.id],
-                                  announcement: e.target.value
-                                }
-                              }))}
-                              placeholder="Announcement Content"
-                            />
-                            <input type="file" className="border rounded px-2 py-1 w-full mt-1" />
-                            <div className="text-xs text-gray-500 mt-1">Uploaded files can be used as facility announcement lag (UI only for now)</div>
+                            <label htmlFor="visionEnabled">Display on Vision</label>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                {settingsTab === 'shop' && (
-                  <div className="flex gap-6 relative">
-                    <div className="w-1/3 border-r pr-4 max-h-96 overflow-y-auto" ref={shopListRef}>
-                      <div className="font-semibold mb-2">Shop & Office List</div>
-                      {shops.map(shop => (
-                        <div
-                          key={shop.id}
-                          className={`flex items-center space-x-2 p-2 rounded cursor-pointer ${selectedShopId === shop.id ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
-                          onClick={() => { setSelectedShopId(shop.id); setAddingShop(false); }}
-                        >
-                          <span className="text-2xl">{shop.appearance}</span>
-                          <span>{shop.name}</span>
-                        </div>
-                      ))}
-                      <button
-                        className="mt-4 w-full py-2 bg-green-600 text-white rounded shadow hover:bg-green-700 transition-colors"
-                        onClick={() => { setAddingShop(true); setSelectedShopId(null); }}
-                      >
-                        ＋ Add Shop
-                      </button>
-                    </div>
-                    <div className="flex-1 max-h-96 overflow-y-auto">
-                      {addingShop ? (
-                        // 新規追加フォーム
                         <div>
-                          <div className="font-semibold mb-2">Add New Shop & Office</div>
-                          <div className="space-y-2">
-                            <input
-                              type="text"
-                              className="border rounded px-2 py-1 w-full"
-                              placeholder="Shop Name"
-                              value={newShop.name}
-                              onChange={e => setNewShop(s => ({ ...s, name: e.target.value }))}
-                            />
-                            <input
-                              type="text"
-                              className="border rounded px-2 py-1 w-full"
-                              placeholder="Business Type"
-                              value={newShop.category}
-                              onChange={e => setNewShop(s => ({ ...s, category: e.target.value }))}
-                            />
-                            <input
-                              type="text"
-                              className="border rounded px-2 py-1 w-full"
-                              placeholder="Address"
-                              value={newShop.address}
-                              onChange={e => setNewShop(s => ({ ...s, address: e.target.value }))}
-                            />
-                            <input
-                              type="text"
-                              className="border rounded px-2 py-1 w-full"
-                              placeholder="Phone Number"
-                              value={newShop.phone}
-                              onChange={e => setNewShop(s => ({ ...s, phone: e.target.value }))}
-                            />
-                            <input
-                              type="text"
-                              className="border rounded px-2 py-1 w-full"
-                              placeholder="URL"
-                              value={newShop.homepageUrl}
-                              onChange={e => setNewShop(s => ({ ...s, homepageUrl: e.target.value }))}
-                            />
-                            <div className="flex space-x-2">
-                              <select
-                                className="border rounded px-2 py-1 w-1/2"
-                                value={newShop.hoursStart || ''}
-                                onChange={e => setNewShop(s => ({ ...s, hoursStart: e.target.value }))}
-                              >
-                                <option value="">Start Time</option>
-                                {Array.from({length: 24}, (_, i) => `${i}:00`).map(time => (
-                                  <option key={time} value={time}>{time}</option>
-                                ))}
-                              </select>
-                              <select
-                                className="border rounded px-2 py-1 w-1/2"
-                                value={newShop.hoursEnd || ''}
-                                onChange={e => setNewShop(s => ({ ...s, hoursEnd: e.target.value }))}
-                              >
-                                <option value="">End Time</option>
-                                {Array.from({length: 24}, (_, i) => `${i}:00`).map(time => (
-                                  <option key={time} value={time}>{time}</option>
-                                ))}
-                              </select>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <input
-                                type="checkbox"
-                                id="recruit"
-                                checked={!!newShop.recruit}
-                                onChange={e => setNewShop(s => ({ ...s, recruit: e.target.checked ? 'Available' : '' }))}
-                              />
-                              <label htmlFor="recruit">Job Recruitment Available</label>
-                            </div>
-                            <div>
-                              <label className="block font-semibold mb-1">Holidays</label>
-                              <HolidayCalendar
-                                selectedDates={newShop.holidays || []}
-                                onDateChange={(dates) => setNewShop(s => ({ ...s, holidays: dates }))}
-                              />
-                            </div>
-                            <div>
-                              <label className="block font-semibold mb-1">Announcement</label>
-                              <input
-                                type="text"
-                                className="border rounded px-2 py-1 w-full"
-                                placeholder="Announcement (e.g., sale information)"
-                                value={newShop.commercialText}
-                                onChange={e => setNewShop(s => ({ ...s, commercialText: e.target.value }))}
-                              />
-                              <div className="flex items-center space-x-2 mt-1">
-                                <input
-                                  type="checkbox"
-                                  id="visionEnabled"
-                                  checked={!!newShop.visionEnabled}
-                                  onChange={e => setNewShop(s => ({ ...s, visionEnabled: e.target.checked }))}
-                                />
-                                <label htmlFor="visionEnabled">Display on Vision</label>
-                              </div>
-                            </div>
-                            <div>
-                              <label className="block font-semibold mb-1">AI Chat Settings</label>
-                              <textarea
-                                className="border rounded px-2 py-1 w-full"
-                                rows={3}
-                                value={newShop.stance}
-                                onChange={e => setNewShop(s => ({ ...s, stance: e.target.value }))}
-                                placeholder="AI chat character and description"
-                              />
-                            </div>
-                            <div>
-                              <button
-                                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full"
-                                onClick={async () => {
-                                  const id = uuidv4(); // ← uuidでID生成
-                                  const position = getNextShopPosition(shops);
-                                  const newShopObj = {
-                                    id,
-                                    name: newShop.name || 'New Shop',
-                                    category: newShop.category || '',
-                                    stance: newShop.stance || '',
-                                    appearance: newShop.appearance || '',
-                                    commercial_text: newShop.commercialText || '',
-                                    hours_start: newShop.hoursStart || '',
-                                    hours_end: newShop.hoursEnd || '',
-                                    recruit: newShop.recruit || '',
-                                    phone: newShop.phone || '',
-                                    address: newShop.address || '',
-                                    homepage_url: newShop.homepageUrl || '',
-                                    vision_enabled: newShop.visionEnabled ?? false,
-                                    holidays: newShop.holidays || [],
-                                    position,
-                                  };
-                                  // shopsテーブルにinsert
-                                  const { error: shopInsertError } = await supabase.from('shops').insert(newShopObj);
-                                  if (shopInsertError) {
-                                    alert('Shop registration failed: ' + shopInsertError.message);
-                                    return;
-                                  }
-                                  setShops([...shops, newShopObj]);
-                                  setShopDetails(details => ({
-                                    ...details,
-                                    [id]: {
-                                      name: newShop.name || 'New Shop',
-                                      category: newShop.category,
-                                      hours: newShop.hours,
-                                      commercial_text: newShop.commercialText,
-                                      stance: newShop.stance,
-                                    }
-                                  }));
-                                  setNewShop({ name: '', category: '', hours: '', hoursStart: '', hoursEnd: '', recruit: '', phone: '', address: '', catchphrase: '', commercialText: '', stance: '', appearance: '🏪', homepageUrl: '', visionEnabled: false, holidays: [] });
-                                  setAddingShop(false);
-                                  setSelectedShopId(id);
-                                }}
-                              >Save</button>
-                            </div>
-                          </div>
+                          <label className="block font-semibold mb-1">AI Chat Settings</label>
+                          <textarea
+                            className="border rounded px-2 py-1 w-full"
+                            rows={3}
+                            value={newShop.stance}
+                            onChange={e => setNewShop(s => ({ ...s, stance: e.target.value }))}
+                            placeholder="AI chat character and description"
+                          />
                         </div>
-                      ) : selectedShopId ? (
-                        // 既存店舗編集フォーム
-                        <ShopEditForm
-                          shop={shops.find(s => s.id === selectedShopId)!}
-                          lags={shopLags[selectedShopId] || []}
-                          uploading={uploading}
-                          uploadMessage={uploadMessage}
-                          onUpload={handleUpload}
-                          onDeleteLag={async (lagId) => {
-                            await supabase.from('shop_lags').delete().eq('id', lagId);
-                            const { data: lags } = await supabase.from('shop_lags').select('id, file_url, file_name').eq('shop_id', selectedShopId);
-                            setShopLags(l => ({ ...l, [selectedShopId]: lags || [] }));
-                          }}
-                          onSave={updatedShop => {
-                            setShops(shops.map(s => s.id === selectedShopId ? { ...s, ...updatedShop } : s));
-                            setSelectedShopId(null);
-                            setAddingShop(false);
-                          }}
-                          onCancel={() => setSelectedShopId(null)}
-                        />
-                      ) : (
-                        <div className="text-gray-400">Please select a shop or office</div>
-                      )}
+                        <div>
+                          <button
+                            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full"
+                            onClick={async () => {
+                              const id = uuidv4(); // ← uuidでID生成
+                              const position = getNextShopPosition(shops);
+                              const newShopObj = {
+                                id,
+                                name: newShop.name || 'New Shop',
+                                category: newShop.category || '',
+                                stance: newShop.stance || '',
+                                appearance: newShop.appearance || '',
+                                commercial_text: newShop.commercial_text || '',
+                                hours_start: newShop.hours_start || '',
+                                hours_end: newShop.hours_end || '',
+                                recruit: newShop.recruit || '',
+                                phone: newShop.phone || '',
+                                address: newShop.address || '',
+                                homepage_url: newShop.homepage_url || '',
+                                vision_enabled: newShop.vision_enabled ?? false,
+                                holidays: newShop.holidays || [],
+                                position,
+                              };
+                              // shopsテーブルにinsert
+                              const { error: shopInsertError } = await supabase.from('shops').insert(newShopObj);
+                              if (shopInsertError) {
+                                alert('Shop registration failed: ' + shopInsertError.message);
+                                return;
+                              }
+                              setShops([...shops, newShopObj]);
+                              setShopDetails(details => ({
+                                ...details,
+                                [id]: {
+                                  name: newShop.name || 'New Shop',
+                                  category: newShop.category,
+                                  hours: newShop.hours_start,
+                                  commercial_text: newShop.commercial_text,
+                                  stance: newShop.stance,
+                                }
+                              }));
+                              setNewShop({ ...initialShop, id: uuidv4() });
+                              setAddingShop(false);
+                              setSelectedShopId(id);
+                            }}
+                          >Save</button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    selectedShopId ? (
+                      // ショップ編集パネル
+                      <EntityEditForm
+                        entity={shops.find(s => s.id === selectedShopId)!}
+                        entityType="shop"
+                        lags={shopLags[selectedShopId] || []}
+                        uploading={uploading}
+                        uploadMessage={uploadMessage}
+                        onUpload={handleUpload}
+                        onDeleteLag={async (lagId: string) => {
+                          await supabase.from('shop_lags').delete().eq('id', lagId);
+                          const { data: lags } = await supabase.from('shop_lags').select('id, file_url, file_name').eq('shop_id', selectedShopId);
+                          setShopLags((prev: any) => ({ ...prev, [selectedShopId]: lags || [] }));
+                        }}
+                        onSave={handleSaveShop}
+                        onCancel={() => setSelectedShopId(null)}
+                      />
+                    ) : (
+                      <div className="text-gray-400">Please select a shop or office</div>
+                    )
+                  )}
+                </div>
               </div>
             )}
           </div>

@@ -1,29 +1,30 @@
-export type Shop = {
+export interface BaseEntity {
   id: string;
   name: string;
   category: string;
-  stance: string;
-  appearance: string;
-  commercial_text: string;
+  stance: string; // AI応答スタンス
+  commercial_text: string; // お知らせ
+  holidays?: string[]; // 休日リスト
+  vision_enabled: boolean;
+  address: string;
+  phone: string;
+  homepage_url: string;
   hours_start: string;
   hours_end: string;
   recruit: string;
-  phone: string;
-  address: string;
-  homepage_url: string;
-  vision_enabled: boolean;
+}
+
+export type Shop = BaseEntity & {
+  icon: string;
+  appearance: string;
   position: any; // jsonb
-  holidays?: string[]; // 休日リスト（YYYY-MM-DD形式の配列）
 };
 
-export interface Facility {
-  id: string
-  name: string
-  icon: string
-  category: string
-  philosophy: string
-  responseStance: string
-  isVisible: boolean
+export interface Facility extends BaseEntity {
+  icon: string;
+  philosophy: string;
+  responseStance: string;
+  isVisible: boolean;
 }
 
 export interface ChatMessage {

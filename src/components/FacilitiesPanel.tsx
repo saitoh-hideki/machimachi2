@@ -75,7 +75,7 @@ export const FacilitiesPanel: React.FC<FacilitiesPanelProps> = ({ visibleFacilit
               >
                 <span className="text-2xl">{facility.icon}</span>
               </button>
-              <span className="text-sm font-semibold">{name}</span>
+              <span className="text-sm font-semibold facility-label-night">{name}</span>
             </motion.div>
           )
         })}

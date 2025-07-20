@@ -34,6 +34,13 @@ const EntityEditForm: React.FC<EntityEditFormProps> = ({ entity, entityType, lag
         <input
           type="text"
           className="border rounded px-2 py-1 w-full"
+          placeholder="Icon (emoji or image URL)"
+          value={form.icon || ''}
+          onChange={e => setForm(s => ({ ...s, icon: e.target.value }))}
+        />
+        <input
+          type="text"
+          className="border rounded px-2 py-1 w-full"
           placeholder={entityType === 'shop' ? 'Shop Name' : 'Facility Name'}
           value={form.name}
           onChange={e => setForm(s => ({ ...s, name: e.target.value }))}
@@ -178,13 +185,6 @@ const EntityEditForm: React.FC<EntityEditFormProps> = ({ entity, entityType, lag
         )}
         {entityType === 'facility' && (
           <>
-            <input
-              type="text"
-              className="border rounded px-2 py-1 w-full"
-              placeholder="Icon (emoji or url)"
-              value={(form as Facility).icon || ''}
-              onChange={e => setForm(s => ({ ...s, icon: e.target.value }))}
-            />
             <input
               type="text"
               className="border rounded px-2 py-1 w-full"
