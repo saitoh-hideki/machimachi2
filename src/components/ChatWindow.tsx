@@ -140,8 +140,11 @@ export const ChatWindow: React.FC = () => {
     } else if (colIdx === 2 || colIdx === 3) {
       windowPositionStyle = { right: 40, left: 'auto', transform: 'none' };
     }
+  } else if (selectedFacility) {
+    // 公共施設は左側に表示
+    windowPositionStyle = { left: 40, right: 'auto', transform: 'none' };
   } else {
-    // 公共施設や未選択時は中央
+    // 未選択時は中央
     windowPositionStyle = { left: '50%', transform: 'translateX(-50%)' };
   }
 

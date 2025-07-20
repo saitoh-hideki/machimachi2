@@ -3,7 +3,6 @@
 import React from 'react'
 import { useStore } from '@/store/useStore'
 import { Shop as ShopComponent } from './Shop'
-import { Road } from './Road'
 import { Shop } from '@/types'
 import { motion } from 'framer-motion'
 
@@ -18,38 +17,66 @@ export const ShoppingStreet: React.FC<ShoppingStreetProps> = ({ myStreet, street
   const mockShops: Shop[] = [
     {
       id: '1',
-      name: '田中パン屋',
-      category: 'パン屋',
-      stance: '焼きたての香りと笑顔でお迎えします',
-      appearance: '🥐',
-      commercialText: '朝7時から焼きたてパン販売中！',
-      position: { row: 0, side: 'left' }
-    },
-    {
-      id: '2',
       name: '花咲生花店',
       category: '花屋',
       stance: '季節の花で暮らしに彩りを',
       appearance: '🌸',
-      commercialText: '母の日フェア開催中',
-      position: { row: 0, side: 'right' }
+      commercial_text: '母の日フェア開催中',
+      hours_start: '09:00',
+      hours_end: '19:00',
+      recruit: '',
+      phone: '',
+      address: '',
+      homepage_url: '',
+      vision_enabled: false,
+      position: { row: 0, side: 'left' }
     },
     {
-      id: '3',
+      id: '2',
       name: '山田書店',
       category: '本屋',
       stance: '本との出会いを大切に',
       appearance: '📚',
-      commercialText: '新刊入荷しました',
-      position: { row: 1, side: 'left' }
+      commercial_text: '新刊入荷しました',
+      hours_start: '10:00',
+      hours_end: '20:00',
+      recruit: '',
+      phone: '',
+      address: '',
+      homepage_url: '',
+      vision_enabled: false,
+      position: { row: 0, side: 'right' }
     },
     {
-      id: '4',
+      id: '3',
       name: 'カフェ青山',
       category: 'カフェ',
       stance: 'ゆったりとした時間をお過ごしください',
       appearance: '☕',
-      commercialText: '季節限定ドリンク登場',
+      commercial_text: '季節限定ドリンク登場',
+      hours_start: '08:00',
+      hours_end: '22:00',
+      recruit: '',
+      phone: '',
+      address: '',
+      homepage_url: '',
+      vision_enabled: false,
+      position: { row: 1, side: 'left' }
+    },
+    {
+      id: '4',
+      name: '田中パン屋',
+      category: 'パン屋',
+      stance: '焼きたての香りと笑顔でお迎えします',
+      appearance: '🥐',
+      commercial_text: '朝7時から焼きたてパン販売中！',
+      hours_start: '07:00',
+      hours_end: '18:00',
+      recruit: '',
+      phone: '',
+      address: '',
+      homepage_url: '',
+      vision_enabled: false,
       position: { row: 1, side: 'right' }
     },
   ]
@@ -59,7 +86,7 @@ export const ShoppingStreet: React.FC<ShoppingStreetProps> = ({ myStreet, street
     displayShops = displayShops.filter(shop => favoriteShops.includes(shop.id))
   }
 
-  // 4列（左2＋右2）で縦に並べるため、行ごとにグループ化
+  // 4列で縦に並べるため、行ごとにグループ化
   const rows: Array<{ shops: Shop[] }> = []
   for (let i = 0; i < Math.min(displayShops.length, 20); i += 4) {
     rows.push({
@@ -83,17 +110,13 @@ export const ShoppingStreet: React.FC<ShoppingStreetProps> = ({ myStreet, street
         </motion.div>
 
         <div className="relative mt-8 flex w-full" style={{ minHeight: `${rows.length * 12 + 20}rem` }}>
-          {/* Roadをストリート全体の高さに合わせて絶対配置 */}
-          <div className="absolute inset-0 flex justify-center pointer-events-none z-0">
-            <Road />
-          </div>
-          {/* 店舗を上に重ねて表示 */}
+          {/* 店舗を4列で表示 - 左上の焦点を一コマ分動かし、間隔を狭める */}
           <div className="relative z-10 flex-1">
             <div className="flex flex-col gap-y-16">
               {rows.map((row, rowIndex) => (
-                <div key={rowIndex} className="grid grid-cols-4 gap-x-24">
+                <div key={rowIndex} className="grid grid-cols-4 gap-x-4 ml-16">
                   {row.shops.map((shop, colIdx) => (
-                    <div key={shop.id} className={colIdx % 2 === 0 ? 'justify-self-end' : 'justify-self-start'}>
+                    <div key={shop.id} className="flex justify-center">
                       <motion.div
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}

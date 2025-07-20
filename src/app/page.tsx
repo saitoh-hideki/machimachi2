@@ -37,11 +37,11 @@ export default function Home() {
         name: s.name,
         category: s.category,
         hours: '',
-        commercialText: s.commercialText,
+        commercial_text: s.commercial_text,
         stance: s.stance,
       }
       return acc
-    }, {} as Record<string, { name: string; category: string; hours: string; commercialText: string; stance: string }>)
+    }, {} as Record<string, { name: string; category: string; hours: string; commercial_text: string; stance: string }>)
   )
   const [addingShop, setAddingShop] = React.useState(false)
   const [newShop, setNewShop] = React.useState({
@@ -68,12 +68,12 @@ export default function Home() {
   const [shopLags, setShopLags] = React.useState<Record<string, Array<{ id: string, file_url: string, file_name: string }>>>({});
   const [pendingLags, setPendingLags] = React.useState<Array<{ file_url: string, file_name: string }>>([]);
 
-  // 追加時の自動配置ロジック
-  function getNextShopPosition(currentShops: import('@/types').Shop[]): { row: number; side: 'left' | 'right' } {
+  // 追加時の自動配置ロジック（4列対応）
+  function getNextShopPosition(currentShops: import('@/types').Shop[]): { row: number; column: number } {
     const count = currentShops.length
-    const side: 'left' | 'right' = count % 2 === 0 ? 'left' : 'right'
-    const row = Math.floor(count / 2) % 4
-    return { row, side }
+    const column = count % 4
+    const row = Math.floor(count / 4)
+    return { row, column }
   }
 
   // 店舗選択時にラグ一覧を取得

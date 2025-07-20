@@ -40,6 +40,14 @@ export const FacilitiesPanel: React.FC<FacilitiesPanelProps> = ({ visibleFacilit
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.4 }}
             className="vision-display text-xs"
+            style={{
+              width: '200px',
+              height: '80px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center'
+            }}
           >
             <div className="text-center">
               <div className="font-bold">{announcementMessages[currentAnnouncementIndex].sender}</div>

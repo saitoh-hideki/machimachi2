@@ -39,6 +39,12 @@
 
   .vision-display {
     @apply bg-black text-white p-2 rounded-md;
+    width: 200px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
   }
 
   .night-mode {
