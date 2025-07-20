@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useStore } from '@/store/useStore'
 import { motion } from 'framer-motion'
+import { Calendar } from 'lucide-react'
 
 export const ClockTower: React.FC = () => {
   const { timeMode, shops } = useStore()
@@ -45,6 +46,14 @@ export const ClockTower: React.FC = () => {
 
   return (
     <div className="fixed top-4 right-4 z-20 flex flex-col items-end">
+      {/* カレンダーと日付表示 */}
+      <div className="mb-2 bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-3 flex items-center space-x-2">
+        <Calendar size={20} className="text-blue-600" />
+        <div className="text-sm font-medium text-gray-800">
+          {currentTime.getFullYear()}年{currentTime.getMonth() + 1}月{currentTime.getDate()}日
+        </div>
+      </div>
+      
       {/* 時計本体 */}
       <div className="w-32 h-32 bg-gradient-to-b from-gray-200 via-white to-gray-100 rounded-full flex items-center justify-center relative">
         <div className="w-28 h-28 bg-white rounded-full border border-gray-200 shadow-md flex items-center justify-center relative">

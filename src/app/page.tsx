@@ -12,6 +12,7 @@ import { TopLeftIcons } from '@/components/TopLeftIcons'
 import { Shop } from '../types'
 import { supabase } from '@/lib/supabaseClient';
 import ShopEditForm from '@/components/ShopEditForm';
+import { HolidayCalendar } from '@/components/HolidayCalendar';
 import { v4 as uuidv4 } from 'uuid';
 
 export default function Home() {
@@ -61,6 +62,7 @@ export default function Home() {
     appearance: '🏪',
     homepageUrl: '',
     visionEnabled: false,
+    holiday: '', // 休日フィールドを追加
   })
   const { favoriteShops } = useStore()
   const [showMyStreet, setShowMyStreet] = React.useState(false)
@@ -462,6 +464,13 @@ export default function Home() {
                               <label htmlFor="recruit">Job Recruitment Available</label>
                             </div>
                             <div>
+                              <label className="block font-semibold mb-1">Holiday</label>
+                              <HolidayCalendar
+                                selectedDates={newShop.holiday ? [newShop.holiday] : []}
+                                onDateChange={(dates) => setNewShop(s => ({ ...s, holiday: dates[0] || '' }))}
+                              />
+                            </div>
+                            <div>
                               <label className="block font-semibold mb-1">Announcement</label>
                               <input
                                 type="text"
@@ -510,6 +519,7 @@ export default function Home() {
                                     address: newShop.address || '',
                                     homepage_url: newShop.homepageUrl || '',
                                     vision_enabled: newShop.visionEnabled ?? false,
+                                    holiday: newShop.holiday || '',
                                     position,
                                   };
                                   // shopsテーブルにinsert
@@ -529,7 +539,7 @@ export default function Home() {
                                       stance: newShop.stance,
                                     }
                                   }));
-                                  setNewShop({ name: '', category: '', hours: '', hoursStart: '', hoursEnd: '', recruit: '', phone: '', address: '', catchphrase: '', commercialText: '', stance: '', appearance: '🏪', homepageUrl: '', visionEnabled: false });
+                                  setNewShop({ name: '', category: '', hours: '', hoursStart: '', hoursEnd: '', recruit: '', phone: '', address: '', catchphrase: '', commercialText: '', stance: '', appearance: '🏪', homepageUrl: '', visionEnabled: false, holiday: '' });
                                   setAddingShop(false);
                                   setSelectedShopId(id);
                                 }}

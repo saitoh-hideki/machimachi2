@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Shop } from '@/types';
+import { HolidayCalendar } from './HolidayCalendar';
 
 interface ShopLag {
   id: string;
@@ -86,6 +87,13 @@ const ShopEditForm: React.FC<ShopEditFormProps> = ({ shop, lags, uploading, uplo
               ))}
             </select>
           </div>
+        <div>
+          <label className="block font-semibold mb-1">Holiday</label>
+          <HolidayCalendar
+            selectedDates={form.holiday ? [form.holiday] : []}
+            onDateChange={(dates) => setForm(s => ({ ...s, holiday: dates[0] || '' }))}
+          />
+        </div>
         <div className="flex items-center space-x-2">
           <input
             type="checkbox"

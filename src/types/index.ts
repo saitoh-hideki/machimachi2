@@ -13,6 +13,7 @@ export type Shop = {
   homepage_url: string;
   vision_enabled: boolean;
   position: any; // jsonb
+  holiday?: string; // 休日（YYYY-MM-DD形式）
 };
 
 export interface Facility {

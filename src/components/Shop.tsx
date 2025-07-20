@@ -15,6 +15,17 @@ export const Shop: React.FC<ShopProps> = ({ shop }) => {
   const { selectShop, favoriteShops, toggleFavorite } = useStore()
   const isFavorite = favoriteShops.includes(shop.id)
 
+  // 休日チェック機能
+  const isHoliday = () => {
+    if (!shop.holiday) return false;
+    const today = new Date();
+    const todayYear = today.getFullYear();
+    const todayMonth = String(today.getMonth() + 1).padStart(2, '0');
+    const todayDay = String(today.getDate()).padStart(2, '0');
+    const todayString = `${todayYear}-${todayMonth}-${todayDay}`;
+    return shop.holiday === todayString;
+  }
+
   const handleClick = () => {
     selectShop(shop)
   }
@@ -37,7 +48,9 @@ export const Shop: React.FC<ShopProps> = ({ shop }) => {
   return (
     <div className="relative w-[3cm] max-w-md">
       <div
-        className="shop-building w-[3cm] h-[3cm] bg-white border border-gray-200 shadow-md rounded-lg flex items-center justify-center relative text-gray-800"
+        className={`shop-building w-[3cm] h-[3cm] bg-white border shadow-md rounded-lg flex items-center justify-center relative text-gray-800 ${
+          isHoliday() ? 'border-red-500 border-2' : 'border-gray-200'
+        }`}
         onClick={handleClick}
       >
         <div className="shop-sign sm:text-xs">
@@ -48,6 +61,12 @@ export const Shop: React.FC<ShopProps> = ({ shop }) => {
         </div>
         {/* 下段に業種を表示 */}
         <div className="text-xs text-center mt-1 text-gray-600">{shop.category}</div>
+        {/* 休日表示 */}
+        {isHoliday() && (
+          <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2">
+            <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">休日</span>
+          </div>
+        )}
         {/* 右上に詳細・リンクアイコン */}
         <div className="absolute top-2 right-2 flex space-x-1 z-10 sm:top-1 sm:right-1">
           <button
@@ -92,6 +111,7 @@ export const Shop: React.FC<ShopProps> = ({ shop }) => {
               <div><span className="font-semibold">URL: </span>{shop.homepage_url ? (<a href={shop.homepage_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">{shop.homepage_url}</a>) : 'Not registered'}</div>
               <div><span className="font-semibold">Start Time: </span>{shop.hours_start || ''}</div>
               <div><span className="font-semibold">End Time: </span>{shop.hours_end || ''}</div>
+              <div><span className="font-semibold">Holiday: </span>{shop.holiday ? new Date(shop.holiday).toLocaleDateString() : 'Not set'}</div>
               <div><span className="font-semibold">Job Recruitment: </span>{shop.recruit ? 'Available' : 'Not available'}</div>
               <div><span className="font-semibold">Announcement: </span>{shop.commercial_text}</div>
               {/* ここまでが基本情報。AIチャット設定やラグはこの下に追加可能 */}
