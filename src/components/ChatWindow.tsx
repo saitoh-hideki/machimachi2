@@ -170,22 +170,60 @@ export const ChatWindow: React.FC = () => {
         },
         body: JSON.stringify(requestBody)
       });
-      const data = await res.json();
-      
-      const aiContent = data.response || (language === 'ja' 
-        ? '申し訳ございません。応答を生成できませんでした。'
-        : 'Sorry, I could not generate a response.');
-      const aiMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
+      if (!res.body) throw new Error('No response body');
+
+      // まず「考え中…」のAIメッセージを追加
+      const aiMessageId = (Date.now() + 1).toString();
+      setMessages(prev => [...prev, {
+        id: aiMessageId,
         role: 'assistant',
-        content: aiContent,
+        content: language === 'ja' ? '考え中…' : 'Thinking…',
         timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, aiMessage]);
+      }]);
+      // 100msだけ待つことで「考え中…」が確実に表示されるようにする
+      await new Promise(r => setTimeout(r, 100));
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let aiContent = '';
+      let firstChunk = true;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        // OpenAIのSSE形式: data: ...\n\n で来るのでパース
+        const lines = chunk.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('data:')) {
+            const data = line.replace('data:', '').trim();
+            if (data === '[DONE]') continue;
+            try {
+              const json = JSON.parse(data);
+              const delta = json.choices?.[0]?.delta?.content || '';
+              if (delta) {
+                aiContent += delta;
+                // 最初のchunkで「考え中…」を消す
+                setMessages(prev => prev.map(m =>
+                  m.id === aiMessageId ? { ...m, content: firstChunk ? delta : aiContent } : m
+                ));
+                firstChunk = false;
+              }
+            } catch {
+              // 無視
+            }
+          }
+        }
+      }
       setIsLoading(false);
     } catch (error) {
       console.error('Error sending message:', error);
       setIsLoading(false);
+      // エラー時はAIメッセージをエラー文に置き換え
+      setMessages(prev => prev.map(m =>
+        m.role === 'assistant' && (m.content === '考え中…' || m.content === 'Thinking…')
+          ? { ...m, content: language === 'ja' ? '申し訳ございません。応答を生成できませんでした。' : 'Sorry, I could not generate a response.' }
+          : m
+      ));
     }
   }
 
@@ -308,7 +346,7 @@ export const ChatWindow: React.FC = () => {
               </div>
             </div>
           ))}
-          {isLoading && (
+          {isLoading && !(messages[messages.length - 1]?.role === 'assistant' && (messages[messages.length - 1]?.content === '考え中…' || messages[messages.length - 1]?.content === 'Thinking…')) && (
             <div className="flex justify-start">
               <div className="bg-gray-100 p-3 rounded-lg">
                 <div className="flex space-x-1">
