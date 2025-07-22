@@ -13,6 +13,7 @@ import { Shop } from '../types'
 import { supabase } from '@/lib/supabaseClient';
 import EntityEditForm from '@/components/EntityEditForm';
 import { HolidayCalendar } from '@/components/HolidayCalendar';
+
 import { v4 as uuidv4 } from 'uuid';
 
 export default function Home() {
@@ -541,6 +542,12 @@ export default function Home() {
                           />
                         </div>
                         <div>
+                          <label className="block font-semibold mb-1">Knowledge Base (Text Files)</label>
+                          <div className="text-sm text-gray-500 mb-2">
+                            店舗を保存してからファイルをアップロードしてください
+                          </div>
+                        </div>
+                        <div>
                           <button
                             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full"
                             onClick={async () => {
@@ -591,21 +598,24 @@ export default function Home() {
                   ) : (
                     selectedShopId ? (
                       // ショップ編集パネル
-                      <EntityEditForm
-                        entity={shops.find(s => s.id === selectedShopId)!}
-                        entityType="shop"
-                        lags={shopLags[selectedShopId] || []}
-                        uploading={uploading}
-                        uploadMessage={uploadMessage}
-                        onUpload={handleUpload}
-                        onDeleteLag={async (lagId: string) => {
-                          await supabase.from('shop_lags').delete().eq('id', lagId);
-                          const { data: lags } = await supabase.from('shop_lags').select('id, file_url, file_name').eq('shop_id', selectedShopId);
-                          setShopLags((prev: any) => ({ ...prev, [selectedShopId]: lags || [] }));
-                        }}
-                        onSave={handleSaveShop}
-                        onCancel={() => setSelectedShopId(null)}
-                      />
+                      <div className="space-y-4">
+                        <EntityEditForm
+                          entity={shops.find(s => s.id === selectedShopId)!}
+                          entityType="shop"
+                          lags={shopLags[selectedShopId] || []}
+                          uploading={uploading}
+                          uploadMessage={uploadMessage}
+                          onUpload={handleUpload}
+                          onDeleteLag={async (lagId: string) => {
+                            await supabase.from('shop_lags').delete().eq('id', lagId);
+                            const { data: lags } = await supabase.from('shop_lags').select('id, file_url, file_name').eq('shop_id', selectedShopId);
+                            setShopLags((prev: any) => ({ ...prev, [selectedShopId]: lags || [] }));
+                          }}
+                          onSave={handleSaveShop}
+                          onCancel={() => setSelectedShopId(null)}
+                        />
+
+                      </div>
                     ) : (
                       <div className="text-gray-400">Please select a shop or office</div>
                     )

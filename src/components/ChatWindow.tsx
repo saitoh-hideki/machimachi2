@@ -10,8 +10,6 @@ import { toRomaji } from 'wanakana'
 // Supabase Edge FunctionのエンドポイントURLを指定
 const SUPABASE_URL = "https://mokjknnkqshriboykvtc.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1va2prbm5rcXNocmlib3lrdnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI4NDk5MDYsImV4cCI6MjA2ODQyNTkwNn0.oZjWC7JNUe2xPW0f8Xmq7kUKkx8o-1sS_kKsVVLrqCw";
-// import { createClient } from '@supabase/supabase-js';
-// const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const SUPABASE_EDGE_URL = `${SUPABASE_URL}/functions/v1/chat`;
 const SUPABASE_TTS_URL = `${SUPABASE_URL}/functions/v1/tts`;
@@ -23,6 +21,7 @@ export const ChatWindow: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [language, setLanguage] = useState<'ja' | 'en'>('ja')
   const [playingTTS, setPlayingTTS] = useState<string | null>(null)
+  const [streamingMessage, setStreamingMessage] = useState<string>('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const entity = selectedShop || selectedFacility
@@ -57,7 +56,6 @@ export const ChatWindow: React.FC = () => {
 
   // 店舗名をローマ字に変換する関数（英語モード時のみ）
   const convertShopName = (name: string) => {
-    console.log('convertShopName called:', { name, language, toRomajiResult: toRomaji(name) })
     if (language === 'en') {
       // 漢字を含む名前の場合は、手動でマッピング
       const nameMapping: Record<string, string> = {
@@ -155,12 +153,13 @@ export const ChatWindow: React.FC = () => {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [messages, streamingMessage])
 
   const handleClose = () => {
     selectShop(null)
     selectFacility(null)
     setMessages([])
+    setStreamingMessage('')
   }
 
   const handleSendMessage = async () => {
@@ -176,6 +175,7 @@ export const ChatWindow: React.FC = () => {
     setMessages(prev => [...prev, userMessage])
     setInputMessage('')
     setIsLoading(true)
+    setStreamingMessage('')
 
     try {
       // APIリクエスト用のshopTypeをcategoryから決定
@@ -199,60 +199,49 @@ export const ChatWindow: React.FC = () => {
         },
         body: JSON.stringify(requestBody)
       });
-      if (!res.body) throw new Error('No response body');
 
-      // まず「考え中…」のAIメッセージを追加
-      const aiMessageId = (Date.now() + 1).toString();
-      setMessages(prev => [...prev, {
-        id: aiMessageId,
-        role: 'assistant',
-        content: language === 'ja' ? '考え中…' : 'Thinking…',
-        timestamp: new Date(),
-      }]);
-      // 100msだけ待つことで「考え中…」が確実に表示されるようにする
-      await new Promise(r => setTimeout(r, 100));
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let aiContent = '';
-      let firstChunk = true;
+      // ストリーミングレスポンスを処理
+      const reader = res.body?.getReader();
+      if (!reader) {
+        throw new Error('No response body');
+      }
+
+      let accumulatedContent = '';
+      
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        const chunk = decoder.decode(value);
-        // OpenAIのSSE形式: data: ...\n\n で来るのでパース
-        const lines = chunk.split('\n');
-        for (const line of lines) {
-          if (line.startsWith('data:')) {
-            const data = line.replace('data:', '').trim();
-            if (data === '[DONE]') continue;
-            try {
-              const json = JSON.parse(data);
-              const delta = json.choices?.[0]?.delta?.content || '';
-              if (delta) {
-                aiContent += delta;
-                // 最初のchunkで「考え中…」を消す
-                setMessages(prev => prev.map(m =>
-                  m.id === aiMessageId ? { ...m, content: firstChunk ? delta : aiContent } : m
-                ));
-                firstChunk = false;
-              }
-            } catch {
-              // 無視
-            }
-          }
-        }
+
+        // デコードしてテキストを取得
+        const chunk = new TextDecoder().decode(value);
+        accumulatedContent += chunk;
+        setStreamingMessage(accumulatedContent);
       }
+
+      // ストリーミング完了後、メッセージを追加
+      setMessages(prev => [...prev, {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: accumulatedContent,
+        timestamp: new Date(),
+      }]);
+      setStreamingMessage('');
       setIsLoading(false);
     } catch (error) {
       console.error('Error sending message:', error);
       setIsLoading(false);
-      // エラー時はAIメッセージをエラー文に置き換え
-      setMessages(prev => prev.map(m =>
-        m.role === 'assistant' && (m.content === '考え中…' || m.content === 'Thinking…')
-          ? { ...m, content: language === 'ja' ? '申し訳ございません。応答を生成できませんでした。' : 'Sorry, I could not generate a response.' }
-          : m
-      ));
+      setStreamingMessage('');
+      // エラー時のメッセージを追加
+      setMessages(prev => [...prev, {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: language === 'ja' ? '申し訳ございません。応答を生成できませんでした。' : 'Sorry, I could not generate a response.',
+        timestamp: new Date(),
+      }]);
     }
   }
 
@@ -398,7 +387,20 @@ export const ChatWindow: React.FC = () => {
               </div>
             </div>
           ))}
-          {isLoading && !(messages[messages.length - 1]?.role === 'assistant' && (messages[messages.length - 1]?.content === '考え中…' || messages[messages.length - 1]?.content === 'Thinking…')) && (
+          
+          {/* ストリーミング中のメッセージ */}
+          {streamingMessage && (
+            <div className="flex justify-start">
+              <div className="bg-gray-100 p-3 rounded-lg max-w-[80%]">
+                <p className="text-sm text-gray-900">
+                  {streamingMessage}
+                  <span className="inline-block w-2 h-4 bg-gray-400 ml-1 animate-pulse"></span>
+                </p>
+              </div>
+            </div>
+          )}
+          
+          {isLoading && !streamingMessage && (
             <div className="flex justify-start">
               <div className="bg-gray-100 p-3 rounded-lg">
                 <div className="flex space-x-1">
