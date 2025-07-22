@@ -8,13 +8,13 @@ import { motion } from 'framer-motion'
 import { toRomaji } from 'wanakana'
 
 // Supabase Edge FunctionのエンドポイントURLを指定
-const SUPABASE_EDGE_URL = "https://mokjknnkqshriboykvtc.supabase.co/functions/v1/chat";
-
-// SupabaseのAnonキーとURL（今後の拡張用）
 const SUPABASE_URL = "https://mokjknnkqshriboykvtc.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1va2prbm5rcXNocmlib3lrdnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI4NDk5MDYsImV4cCI6MjA2ODQyNTkwNn0.oZjWC7JNUe2xPW0f8Xmq7kUKkx8o-1sS_kKsVVLrqCw";
 // import { createClient } from '@supabase/supabase-js';
 // const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const SUPABASE_EDGE_URL = `${SUPABASE_URL}/functions/v1/chat`;
+const SUPABASE_TTS_URL = `${SUPABASE_URL}/functions/v1/tts`;
 
 export const ChatWindow: React.FC = () => {
   const { selectedShop, selectedFacility, selectShop, selectFacility, toggleFavorite, favoriteShops } = useStore()
@@ -22,9 +22,38 @@ export const ChatWindow: React.FC = () => {
   const [inputMessage, setInputMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [language, setLanguage] = useState<'ja' | 'en'>('ja')
+  const [playingTTS, setPlayingTTS] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const entity = selectedShop || selectedFacility
+
+  const playTTS = async (text: string, lang: 'ja' | 'en' = 'ja') => {
+    try {
+      setPlayingTTS(text);
+      const res = await fetch(SUPABASE_TTS_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({ text, language: lang })
+      });
+      if (!res.ok) {
+        alert("音声生成に失敗しました");
+        setPlayingTTS(null);
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audio.play();
+      setPlayingTTS(null);
+    } catch (error) {
+      console.error('TTS error:', error);
+      alert("音声生成に失敗しました");
+      setPlayingTTS(null);
+    }
+  };
 
   // 店舗名をローマ字に変換する関数（英語モード時のみ）
   const convertShopName = (name: string) => {
@@ -337,10 +366,33 @@ export const ChatWindow: React.FC = () => {
                   message.role === 'user'
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-100 text-gray-900'
-                }`}
+                } flex items-center`}
               >
                 <p className="text-sm">{message.content}</p>
-                <p className="text-xs mt-1 opacity-70">
+                {/* 音声再生ボタン（assistantメッセージのみ） */}
+                {message.role === 'assistant' && message.content && (
+                  <button
+                    onClick={() => playTTS(message.content, language)}
+                    disabled={playingTTS === message.content}
+                    className={`ml-2 text-xl focus:outline-none transition-all duration-200 ${
+                      playingTTS === message.content 
+                        ? 'text-orange-500 scale-110 animate-pulse' 
+                        : 'text-gray-600 hover:text-blue-500 hover:scale-110 active:scale-95'
+                    }`}
+                    title={playingTTS === message.content ? "音声生成中..." : "音声で再生"}
+                  >
+                    {playingTTS === message.content ? (
+                      <div className="flex items-center space-x-1">
+                        <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                        <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                      </div>
+                    ) : (
+                      '🔊'
+                    )}
+                  </button>
+                )}
+                <p className="text-xs mt-1 opacity-70 ml-2">
                   {message.timestamp.toLocaleTimeString()}
                 </p>
               </div>
