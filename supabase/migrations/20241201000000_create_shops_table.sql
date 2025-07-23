@@ -1,10 +1,11 @@
--- Create shops table (simplified version)
+-- Create shops table (updated to match TypeScript interface)
 CREATE TABLE IF NOT EXISTS shops (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   category TEXT NOT NULL,
   stance TEXT,
   appearance TEXT NOT NULL,
+  icon TEXT,
   commercial_text TEXT,
   homepage_url TEXT,
   hours_start TEXT,
@@ -12,10 +13,9 @@ CREATE TABLE IF NOT EXISTS shops (
   recruit TEXT,
   phone TEXT,
   address TEXT,
-  catchphrase TEXT,
-  prompt TEXT,
-  position_row INTEGER DEFAULT 0,
-  position_side TEXT DEFAULT 'left' CHECK (position_side IN ('left', 'right')),
+  vision_enabled BOOLEAN DEFAULT false,
+  holidays TEXT[] DEFAULT '{}',
+  position JSONB DEFAULT '{}',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -33,20 +33,32 @@ CREATE TABLE IF NOT EXISTS facilities (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   icon TEXT NOT NULL,
+  category TEXT,
+  stance TEXT,
+  philosophy TEXT,
+  response_stance TEXT,
   is_visible BOOLEAN DEFAULT true,
+  commercial_text TEXT,
+  vision_enabled BOOLEAN DEFAULT false,
+  address TEXT,
+  phone TEXT,
+  homepage_url TEXT,
+  hours_start TEXT,
+  hours_end TEXT,
+  recruit TEXT,
+  holidays TEXT[] DEFAULT '{}',
   community_name TEXT,
-  prompt TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Insert default facilities
-INSERT INTO facilities (name, icon, is_visible, community_name) VALUES
-  ('長野市役所', '🏛️', true, '長野市'),
-  ('図書館', '📚', true, '長野市'),
-  ('病院', '🏥', true, '長野市'),
-  ('郵便局', '📮', true, '長野市'),
-  ('警察署', '👮', true, '長野市'),
-  ('消防署', '🚒', true, '長野市'),
-  ('学校', '🏫', true, '長野市'),
-  ('公園', '🌳', true, '長野市')
+INSERT INTO facilities (name, icon, category, is_visible, community_name) VALUES
+  ('長野市役所', '🏛️', 'Government', true, '長野市'),
+  ('図書館', '📚', 'Library', true, '長野市'),
+  ('病院', '🏥', 'Hospital', true, '長野市'),
+  ('郵便局', '📮', 'Post Office', true, '長野市'),
+  ('警察署', '👮', 'Police', true, '長野市'),
+  ('消防署', '🚒', 'Fire Station', true, '長野市'),
+  ('学校', '🏫', 'School', true, '長野市'),
+  ('公園', '🌳', 'Park', true, '長野市')
 ON CONFLICT DO NOTHING; 

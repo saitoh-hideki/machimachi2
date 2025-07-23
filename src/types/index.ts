@@ -15,7 +15,7 @@ export interface BaseEntity {
 }
 
 export type Shop = BaseEntity & {
-  icon: string;
+  icon?: string; // オプショナルに変更
   appearance: string;
   position: any; // jsonb
 };

@@ -5,6 +5,7 @@ import { useStore } from '@/store/useStore'
 import { Shop as ShopComponent } from './Shop'
 import { Shop } from '@/types'
 import { motion } from 'framer-motion'
+import { Card, CardContent } from '@/components/ui/card'
 
 interface ShoppingStreetProps {
   myStreet?: boolean
@@ -21,6 +22,7 @@ export const ShoppingStreet: React.FC<ShoppingStreetProps> = ({ myStreet, street
       category: 'Flower Shop',
       stance: 'Adding color to life with seasonal flowers',
       appearance: '🌸',
+      icon: '🌸',
       commercial_text: 'Mother\'s Day Fair Now Open',
       hours_start: '09:00',
       hours_end: '19:00',
@@ -37,6 +39,7 @@ export const ShoppingStreet: React.FC<ShoppingStreetProps> = ({ myStreet, street
       category: 'Bookstore',
       stance: 'Cherishing encounters with books',
       appearance: '📚',
+      icon: '📚',
       commercial_text: 'New books have arrived',
       hours_start: '10:00',
       hours_end: '20:00',
@@ -53,6 +56,7 @@ export const ShoppingStreet: React.FC<ShoppingStreetProps> = ({ myStreet, street
       category: 'Cafe',
       stance: 'Please enjoy a relaxing time',
       appearance: '☕',
+      icon: '☕',
       commercial_text: 'Seasonal limited drinks now available',
       hours_start: '08:00',
       hours_end: '22:00',
@@ -69,6 +73,7 @@ export const ShoppingStreet: React.FC<ShoppingStreetProps> = ({ myStreet, street
       category: 'Bakery',
       stance: 'Welcoming you with the aroma of fresh bread and smiles',
       appearance: '🥐',
+      icon: '🥐',
       commercial_text: 'Fresh bread on sale from 7 AM!',
       hours_start: '07:00',
       hours_end: '18:00',
@@ -86,51 +91,44 @@ export const ShoppingStreet: React.FC<ShoppingStreetProps> = ({ myStreet, street
     displayShops = displayShops.filter(shop => favoriteShops.includes(shop.id))
   }
 
-  // 4列で縦に並べるため、行ごとにグループ化
-  const rows: Array<{ shops: Shop[] }> = []
-  for (let i = 0; i < Math.min(displayShops.length, 20); i += 4) {
-    rows.push({
-      shops: displayShops.slice(i, i + 4),
-    })
-  }
-
   return (
-    <div className="relative w-full h-full min-h-screen overflow-y-auto">
-      <div className="relative max-w-7xl mx-auto px-4">
+    <div className="relative w-full h-full min-h-screen overflow-y-auto bg-black">
+      <div className="relative max-w-full mx-auto px-8 py-8">
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center py-8"
+          className="text-center mb-8"
         >
-          <div className="inline-block bg-gradient-to-b from-white via-gray-50 to-gray-200 px-12 py-4 rounded-lg shadow-lg">
-            <h1 className="text-3xl font-bold font-handwritten text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]">
-              {streetName || 'まちまちチャット商店街'}
-            </h1>
-          </div>
+          <h1 className="text-3xl font-bold text-white mb-2">
+            {streetName || (myStreet ? 'My Street' : 'まちまちChat')}
+          </h1>
+          <p className="text-gray-400">
+            {myStreet ? 'お気に入りの店舗' : 'チャットでお店とつながろう'}
+          </p>
         </motion.div>
 
-        <div className="relative mt-8 flex w-full" style={{ minHeight: `${rows.length * 12 + 20}rem` }}>
-          {/* 店舗を4列で表示 - 左上の焦点を一コマ分動かし、間隔を狭める */}
-          <div className="relative z-10 flex-1">
-            <div className="flex flex-col gap-y-16">
-              {rows.map((row, rowIndex) => (
-                <div key={rowIndex} className="grid grid-cols-4 gap-x-4 ml-16">
-                  {row.shops.map((shop, colIdx) => (
-                    <div key={shop.id} className="flex justify-center">
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: rowIndex * 0.1 + colIdx * 0.02 }}
-                      >
-                        <ShopComponent shop={shop} />
-                      </motion.div>
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
+          {displayShops.map((shop, index) => (
+            <motion.div
+              key={shop.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+            >
+              <ShopComponent shop={shop} />
+            </motion.div>
+          ))}
         </div>
+
+        {displayShops.length === 0 && (
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
+            <CardContent className="p-8 text-center">
+              <p className="text-white/90">
+                {myStreet ? 'お気に入りの店舗がありません' : '店舗が見つかりません'}
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   )

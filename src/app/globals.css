@@ -6,20 +6,73 @@
   body {
     @apply overflow-x-hidden;
   }
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 224 71.4% 4.1%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 71.4% 4.1%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 71.4% 4.1%;
+    --primary: 220.9 39.3% 11%;
+    --primary-foreground: 210 20% 98%;
+    --secondary: 220 14.3% 95.9%;
+    --secondary-foreground: 220.9 39.3% 11%;
+    --muted: 220 14.3% 95.9%;
+    --muted-foreground: 220 8.9% 46.1%;
+    --accent: 220 14.3% 95.9%;
+    --accent-foreground: 220.9 39.3% 11%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 20% 98%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 224 71.4% 4.1%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+  }
+  .dark {
+    --background: 0 0% 0%;
+    --foreground: 210 20% 98%;
+    --card: 0 0% 3%;
+    --card-foreground: 210 20% 98%;
+    --popover: 0 0% 3%;
+    --popover-foreground: 210 20% 98%;
+    --primary: 210 20% 98%;
+    --primary-foreground: 220.9 39.3% 11%;
+    --secondary: 0 0% 8%;
+    --secondary-foreground: 210 20% 98%;
+    --muted: 0 0% 8%;
+    --muted-foreground: 217.9 10.6% 64.9%;
+    --accent: 0 0% 8%;
+    --accent-foreground: 210 20% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 20% 98%;
+    --border: 0 0% 12%;
+    --input: 0 0% 12%;
+    --ring: 216 12.2% 83.9%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+  }
 }
 
 @layer components {
   .shop-building {
-    @apply relative cursor-pointer transition-transform hover:scale-105 bg-white border border-gray-200 shadow-md text-gray-800;
+    @apply relative cursor-pointer transition-transform hover:scale-105 bg-gray-800 border border-gray-600 shadow-md text-white;
   }
 
   .shop-sign {
-    @apply absolute -top-6 left-1/2 transform -translate-x-1/2 bg-white text-gray-800 px-3 py-1 rounded-md text-sm font-bold whitespace-nowrap border border-gray-200 shadow-sm;
+    @apply absolute -top-6 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-3 py-1 rounded-md text-sm font-bold whitespace-nowrap border border-gray-600 shadow-sm;
     font-family: 'Comic Sans MS', cursive;
   }
 
   .chat-bubble {
-    @apply absolute bg-white rounded-lg shadow-lg p-4 min-w-[300px] max-w-[400px] z-50;
+    @apply absolute bg-gray-800 rounded-lg shadow-lg p-4 min-w-[300px] max-w-[400px] z-50 text-white;
     &::before {
       content: '';
       position: absolute;
@@ -29,12 +82,12 @@
       height: 0;
       border-left: 10px solid transparent;
       border-right: 10px solid transparent;
-      border-top: 10px solid white;
+      border-top: 10px solid #1f2937;
     }
   }
 
   .facility-icon {
-    @apply w-12 h-12 bg-white rounded-lg flex items-center justify-center cursor-pointer transition-all hover:scale-110 hover:shadow-lg;
+    @apply w-12 h-12 bg-gray-800 rounded-lg flex items-center justify-center cursor-pointer transition-all hover:scale-110 hover:shadow-lg text-white;
   }
 
   .vision-display {
@@ -48,14 +101,14 @@
   }
 
   .night-mode {
-    @apply bg-gradient-to-b from-black via-gray-900 to-gray-800;
-    background-color: #111;
-    background-image: repeating-radial-gradient(circle, #444 0px, #444 1.5px, transparent 3px, transparent 40px);
+    @apply bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900;
+    background-color: #111827;
+    background-image: repeating-radial-gradient(circle, #374151 0px, #374151 1.5px, transparent 3px, transparent 40px);
     background-size: 40px 40px;
   }
 
   .night-mode .shop-building {
-    filter: drop-shadow(0 0 10px rgba(255, 255, 200, 0.5));
+    filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.5));
   }
 
   .night-mode .car-headlight {
@@ -63,8 +116,8 @@
   }
 
   .day-mode {
-    @apply bg-sky-day;
-    background-image: repeating-radial-gradient(circle, #fff 0px, #fff 2px, transparent 4px, transparent 40px);
+    @apply bg-gray-900;
+    background-image: repeating-radial-gradient(circle, #374151 0px, #374151 2px, transparent 4px, transparent 40px);
     background-size: 40px 40px;
   }
 
@@ -74,5 +127,14 @@
 
   .night-mode .facility-label-night {
     color: #fff !important;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
   }
 }

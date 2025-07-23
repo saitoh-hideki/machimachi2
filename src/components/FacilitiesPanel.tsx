@@ -30,32 +30,19 @@ export const FacilitiesPanel: React.FC<FacilitiesPanelProps> = ({ visibleFacilit
 
   return (
     <div className="fixed left-4 top-32 space-y-3 z-20">
-      <div className="bg-gradient-to-b from-white via-gray-50 to-gray-200 text-gray-800 shadow p-3 rounded-lg mb-4 max-w-xs border border-gray-200">
-        <h3 className="font-bold text-sm mb-2">市からのお知らせ</h3>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentAnnouncementIndex}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.4 }}
-            className="vision-display text-xs"
-            style={{
-              width: '200px',
-              height: '80px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              textAlign: 'center'
-            }}
-          >
-            <div className="text-center">
-              <div className="font-bold">{announcementMessages[currentAnnouncementIndex].sender}</div>
-              <div>{announcementMessages[currentAnnouncementIndex].text}</div>
-            </div>
-          </motion.div>
-        </AnimatePresence>
-      </div>
+      {/* ビジョン（お知らせ） - ブラックテーマ */}
+      <motion.div
+        key={currentAnnouncementIndex}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        className="bg-black/80 backdrop-blur-md text-white shadow-2xl p-3 rounded-xl border border-gray-700 text-xs max-w-xs"
+      >
+        <div className="text-center">
+          <div className="font-bold text-gray-300 mb-1">{announcementMessages[currentAnnouncementIndex].sender}</div>
+          <div className="text-gray-200">{announcementMessages[currentAnnouncementIndex].text}</div>
+        </div>
+      </motion.div>
       
       <div className="space-y-2">
         {facilities.filter(f => f.isVisible && (!visibleFacilityIds || visibleFacilityIds.includes(f.id))).map((facility, index) => {
@@ -70,12 +57,12 @@ export const FacilitiesPanel: React.FC<FacilitiesPanelProps> = ({ visibleFacilit
             >
               <button
                 onClick={() => selectFacility(facility)}
-                className="facility-icon bg-white border border-gray-200 shadow-sm"
+                className="facility-icon bg-black/80 backdrop-blur-md border border-gray-700 shadow-2xl rounded-lg p-2 hover:bg-gray-800/80 transition-colors"
                 title={name}
               >
                 <span className="text-2xl">{facility.icon}</span>
               </button>
-              <span className="text-sm font-semibold facility-label-night">{name}</span>
+              <span className="text-sm font-semibold text-white">{name}</span>
             </motion.div>
           )
         })}

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
 
 interface HolidayCalendarProps {
   selectedDates: string[];
@@ -67,29 +68,33 @@ export const HolidayCalendar: React.FC<HolidayCalendarProps> = ({ selectedDates,
   const todayString = `${todayYear}-${todayMonth}-${todayDay}`;
 
   return (
-    <div className="border rounded-lg p-4 bg-white">
+    <div className="border border-gray-600 rounded-lg p-4 bg-gray-800">
       <div className="flex justify-between items-center mb-4">
-        <button
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => changeMonth('prev')}
-          className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
+          className="border-gray-600 text-gray-300 hover:text-white"
         >
           ←
-        </button>
-        <h3 className="text-lg font-semibold">
+        </Button>
+        <h3 className="text-lg font-semibold text-white">
           {currentMonth.getFullYear()}年{currentMonth.getMonth() + 1}月
         </h3>
-        <button
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => changeMonth('next')}
-          className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
+          className="border-gray-600 text-gray-300 hover:text-white"
         >
           →
-        </button>
+        </Button>
       </div>
 
       {/* 曜日ヘッダー */}
       <div className="grid grid-cols-7 gap-1 mb-2">
         {['日', '月', '火', '水', '木', '金', '土'].map(day => (
-          <div key={day} className="text-center text-sm font-semibold text-gray-600 p-2">
+          <div key={day} className="text-center text-sm font-semibold text-gray-400 p-2">
             {day}
           </div>
         ))}
@@ -108,21 +113,18 @@ export const HolidayCalendar: React.FC<HolidayCalendarProps> = ({ selectedDates,
           const dateString = `${year}-${month}-${day}`;
           const isSelected = selectedDates.includes(dateString);
           const isToday = dateString === todayString;
-          const isCurrentMonth = date.getMonth() === currentMonth.getMonth();
 
           return (
             <button
               key={dateString}
               onClick={() => toggleDate(date)}
-              className={`
-                p-2 text-sm rounded transition-colors
-                ${isSelected 
-                  ? 'bg-red-500 text-white hover:bg-red-600' 
-                  : 'hover:bg-gray-100'
-                }
-                ${isToday ? 'ring-2 ring-blue-400' : ''}
-                ${!isCurrentMonth ? 'text-gray-400' : ''}
-              `}
+              className={`p-2 text-sm rounded transition-colors ${
+                isSelected
+                  ? 'bg-red-600 text-white'
+                  : isToday
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
+              }`}
             >
               {date.getDate()}
             </button>
@@ -132,13 +134,13 @@ export const HolidayCalendar: React.FC<HolidayCalendarProps> = ({ selectedDates,
 
       {/* 選択された日付の表示 */}
       {selectedDates.length > 0 && (
-        <div className="mt-4 p-3 bg-gray-50 rounded">
-          <div className="text-sm font-semibold mb-2">選択された休日:</div>
+        <div className="mt-4 p-3 bg-gray-700 rounded border border-gray-600">
+          <div className="text-sm font-semibold mb-2 text-white">選択された休日:</div>
           <div className="flex flex-wrap gap-2">
             {selectedDates.sort().map(date => (
               <span
                 key={date}
-                className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs"
+                className="px-2 py-1 bg-red-600 text-white rounded text-xs"
               >
                 {new Date(date).toLocaleDateString('ja-JP')}
               </span>
@@ -146,6 +148,18 @@ export const HolidayCalendar: React.FC<HolidayCalendarProps> = ({ selectedDates,
           </div>
         </div>
       )}
+
+      {/* 凡例 */}
+      <div className="mt-4 flex items-center space-x-4 text-xs">
+        <div className="flex items-center space-x-1">
+          <div className="w-3 h-3 bg-blue-600 rounded"></div>
+          <span className="text-gray-300">今日</span>
+        </div>
+        <div className="flex items-center space-x-1">
+          <div className="w-3 h-3 bg-red-600 rounded"></div>
+          <span className="text-gray-300">休日</span>
+        </div>
+      </div>
     </div>
   );
 }; 

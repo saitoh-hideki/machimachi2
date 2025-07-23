@@ -3,9 +3,12 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useStore } from '@/store/useStore'
 import { ChatMessage } from '@/types'
-import { X, Send, Heart } from 'lucide-react'
+import { X, Send, Heart, ArrowLeft } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { toRomaji } from 'wanakana'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent } from '@/components/ui/card'
 
 // Supabase Edge FunctionのエンドポイントURLを指定
 const SUPABASE_URL = "https://mokjknnkqshriboykvtc.supabase.co";
@@ -156,8 +159,11 @@ export const ChatWindow: React.FC = () => {
   }, [messages, streamingMessage])
 
   const handleClose = () => {
-    selectShop(null)
-    selectFacility(null)
+    if (selectedShop) {
+      selectShop(null)
+    } else if (selectedFacility) {
+      selectFacility(null)
+    }
     setMessages([])
     setStreamingMessage('')
   }
@@ -256,183 +262,121 @@ export const ChatWindow: React.FC = () => {
 
   const isFavorite = selectedShop && favoriteShops.includes(selectedShop.id)
 
-  // チャットウィンドウの表示位置を決定
-  let windowPositionStyle: React.CSSProperties = { left: '50%', transform: 'translateX(-50%)' };
-  if (selectedShop) {
-    // ShoppingStreetのrows構造を再現してcolIdxを正確に特定
-    const { shops } = useStore.getState();
-    let displayShops = shops.length > 0 ? shops : [
-      {
-        id: '1', name: 'Tanaka Bakery', category: 'Bakery', stance: '', appearance: '', commercialText: '', position: { row: 0, side: 'left' }
-      },
-      {
-        id: '2', name: 'Hanasaki Flower Shop', category: 'Flower Shop', stance: '', appearance: '', commercialText: '', position: { row: 0, side: 'right' }
-      },
-      {
-        id: '3', name: 'Yamada Bookstore', category: 'Bookstore', stance: '', appearance: '', commercialText: '', position: { row: 1, side: 'left' }
-      },
-      {
-        id: '4', name: 'Cafe Aoyama', category: 'Cafe', stance: '', appearance: '', commercialText: '', position: { row: 1, side: 'right' }
-      }
-    ];
-    let colIdx = -1;
-    for (let i = 0; i < Math.min(displayShops.length, 20); i += 4) {
-      const rowShops = displayShops.slice(i, i + 4);
-      const foundIdx = rowShops.findIndex(s => s.id === selectedShop.id);
-      if (foundIdx !== -1) {
-        colIdx = foundIdx;
-        break;
-      }
-    }
-    if (colIdx === 0 || colIdx === 1) {
-      windowPositionStyle = { left: 40, right: 'auto', transform: 'none' };
-    } else if (colIdx === 2 || colIdx === 3) {
-      windowPositionStyle = { right: 40, left: 'auto', transform: 'none' };
-    }
-  } else if (selectedFacility) {
-    // 公共施設は左側に表示
-    windowPositionStyle = { left: 40, right: 'auto', transform: 'none' };
-  } else {
-    // 未選択時は中央
-    windowPositionStyle = { left: '50%', transform: 'translateX(-50%)' };
-  }
-
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.8 }}
-      className={"fixed inset-y-0 z-50 p-4 flex items-center"}
-      style={windowPositionStyle}
+      initial={{ opacity: 0, x: 300 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 300 }}
+      className="fixed inset-0 z-50 bg-black flex flex-col"
     >
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md h-[500px] flex flex-col">
-        <div className="flex items-center justify-between p-4 border-b">
-          <div className="flex items-center space-x-2">
-            <span className="text-2xl">
-              {selectedShop ? selectedShop.appearance : selectedFacility!.icon}
-            </span>
-            <h3 className="font-bold text-lg">{convertShopName(entity.name)}</h3>
-            {selectedShop && (
-              <button
-                onClick={() => toggleFavorite(selectedShop.id)}
-                className="p-1 rounded-full hover:bg-gray-100 transition-colors"
-              >
-                <Heart
-                  size={20}
-                  className={isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400'}
-                />
-              </button>
-            )}
-          </div>
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => setLanguage(language === 'ja' ? 'en' : 'ja')}
-              className="px-3 py-2 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200"
-              title={language === 'ja' ? 'Switch to English' : '日本語に切り替え'}
-            >
-              <span className="text-sm font-medium text-blue-600">
-                {language === 'ja' ? 'EN' : 'JP'}
-              </span>
-            </button>
-
-            <button
-              onClick={handleClose}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <X size={20} />
-            </button>
+      {/* ヘッダー */}
+      <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-gray-900">
+        <div className="flex items-center space-x-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleClose}
+            className="text-gray-300 hover:text-white"
+          >
+            <ArrowLeft size={20} />
+          </Button>
+          <div>
+            <h2 className="text-lg font-semibold text-white">
+              {language === 'en' ? convertShopName(entity.name) : entity.name}
+            </h2>
+            <p className="text-sm text-gray-400">{entity.category}</p>
           </div>
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleClose}
+          className="text-gray-300 hover:text-white"
+        >
+          <X size={20} />
+        </Button>
+      </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.map((message) => (
+      {/* メッセージエリア */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-black">
+        {messages.map((message, index) => (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+          >
             <div
-              key={message.id}
-              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              className={`max-w-[80%] rounded-lg p-3 ${
+                message.role === 'user'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-800 text-white'
+              }`}
             >
-              <div
-                className={`max-w-[80%] p-3 rounded-lg ${
-                  message.role === 'user'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-900'
-                } flex items-center`}
-              >
-                <p className="text-sm">{message.content}</p>
-                {/* 音声再生ボタン（assistantメッセージのみ） */}
-                {message.role === 'assistant' && message.content && (
-                  <button
-                    onClick={() => playTTS(message.content, language)}
-                    disabled={playingTTS === message.content}
-                    className={`ml-2 text-xl focus:outline-none transition-all duration-200 ${
-                      playingTTS === message.content 
-                        ? 'text-orange-500 scale-110 animate-pulse' 
-                        : 'text-gray-600 hover:text-blue-500 hover:scale-110 active:scale-95'
-                    }`}
-                    title={playingTTS === message.content ? "音声生成中..." : "音声で再生"}
-                  >
-                    {playingTTS === message.content ? (
-                      <div className="flex items-center space-x-1">
-                        <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                        <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                      </div>
-                    ) : (
-                      '🔊'
-                    )}
-                  </button>
-                )}
-                <p className="text-xs mt-1 opacity-70 ml-2">
-                  {message.timestamp.toLocaleTimeString()}
-                </p>
-              </div>
+              <p className="text-sm">{message.content}</p>
+              <p className="text-xs mt-1 opacity-70">
+                {new Date(message.timestamp).toLocaleTimeString('ja-JP', {
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </p>
+              {message.role === 'assistant' && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => playTTS(message.content, language)}
+                  disabled={playingTTS === message.content}
+                  className="mt-2 h-6 px-2 text-xs text-gray-300 hover:text-white"
+                >
+                  {playingTTS === message.content ? '再生中...' : '🔊'}
+                </Button>
+              )}
             </div>
-          ))}
-          
-          {/* ストリーミング中のメッセージ */}
-          {streamingMessage && (
-            <div className="flex justify-start">
-              <div className="bg-gray-100 p-3 rounded-lg max-w-[80%]">
-                <p className="text-sm text-gray-900">
-                  {streamingMessage}
-                  <span className="inline-block w-2 h-4 bg-gray-400 ml-1 animate-pulse"></span>
-                </p>
-              </div>
+          </motion.div>
+        ))}
+        
+        {/* ストリーミングメッセージ */}
+        {streamingMessage && (
+          <div className="flex justify-start">
+            <div className="max-w-[80%] rounded-lg p-3 bg-gray-700 text-gray-100">
+              <p className="text-sm">{streamingMessage}</p>
             </div>
-          )}
-          
-          {isLoading && !streamingMessage && (
-            <div className="flex justify-start">
-              <div className="bg-gray-100 p-3 rounded-lg">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                </div>
-              </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-
-        <div className="p-4 border-t">
-          <div className="flex space-x-2">
-            <input
-              type="text"
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder={language === 'ja' ? 'メッセージを入力...' : 'Type a message...'}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={isLoading}
-            />
-            <button
-              onClick={handleSendMessage}
-              disabled={!inputMessage.trim() || isLoading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <Send size={20} />
-            </button>
           </div>
+        )}
+        
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* 入力エリア */}
+      <div className="p-4 border-t border-gray-700 bg-gray-900">
+        <div className="flex space-x-2">
+          <Input
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="メッセージ入力"
+            className="flex-1 bg-gray-800 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500"
+            disabled={isLoading}
+          />
+          <Button
+            onClick={handleSendMessage}
+            disabled={!inputMessage.trim() || isLoading}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            <Send size={16} />
+          </Button>
+        </div>
+        
+        {/* 言語切り替えボタン */}
+        <div className="flex justify-center mt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setLanguage(language === 'ja' ? 'en' : 'ja')}
+            className="text-xs border-gray-600 text-gray-300 hover:text-white"
+          >
+            {language === 'ja' ? 'English' : '日本語'}
+          </Button>
         </div>
       </div>
     </motion.div>
